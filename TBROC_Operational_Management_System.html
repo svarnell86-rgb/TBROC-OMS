@@ -542,6 +542,25 @@
     </style>
 </head>
 <body>
+
+    <!-- Update Banner -->
+    <div id="update-banner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:99999; background:#003366; color:white; padding:12px 20px; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+        <div style="display:flex; align-items:center; gap:12px;">
+            <span style="font-size:20px;">🔄</span>
+            <div>
+                <strong style="font-size:15px;">Update Available</strong>
+                <div id="update-banner-msg" style="font-size:13px; opacity:0.85; margin-top:2px;"></div>
+            </div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <button id="update-btn" style="background:#f0c040; color:#003366; border:none; padding:8px 20px; border-radius:6px; font-weight:700; cursor:pointer; font-size:14px;">
+                🔄 Download Update
+            </button>
+            <button onclick="dismissUpdateBanner()" style="background:transparent; color:white; border:1px solid rgba(255,255,255,0.4); padding:8px 14px; border-radius:6px; cursor:pointer; font-size:13px;">
+                Later
+            </button>
+        </div>
+    </div>
     <!-- ===== AUTH OVERLAY ===== -->
     <div id="auth-overlay">
         <div class="auth-box">
@@ -2472,6 +2491,67 @@ service cloud.firestore {
         window._updatePassword = updatePassword;
         window._sendPasswordResetEmail = sendPasswordResetEmail;
 
+        // ===================== Self-Update Version Check =====================
+        const APP_VERSION = '1.0';
+        window.APP_VERSION = APP_VERSION;
+
+        async function checkForUpdates(db) {
+            try {
+                console.log('[Update Check] Running... App version:', APP_VERSION);
+                const versionDoc = await getDoc(doc(db, 'appConfig', 'version'));
+                if (!versionDoc.exists()) {
+                    console.log('[Update Check] No appConfig/version document found in Firestore.');
+                    return;
+                }
+                const latest  = versionDoc.data().version;
+                const fileUrl = versionDoc.data().fileUrl || null;
+                console.log('[Update Check] Firestore version:', latest, '| fileUrl:', fileUrl);
+
+                if (latest && latest !== APP_VERSION) {
+                    console.log('[Update Check] New version detected — showing banner.');
+                    showUpdateBanner(latest, fileUrl);
+                } else {
+                    console.log('[Update Check] App is up to date.');
+                }
+            } catch (err) {
+                console.warn('[Update Check] Failed:', err.message);
+            }
+        }
+
+        function showUpdateBanner(newVersion, fileUrl) {
+            const banner = document.getElementById('update-banner');
+            const msg    = document.getElementById('update-banner-msg');
+            if (!banner) return;
+            msg.textContent = `Version ${newVersion} is available (you have ${APP_VERSION}).`;
+            banner.style.display = 'flex';
+
+            document.getElementById('update-btn').onclick = async function() {
+                if (!fileUrl) {
+                    alert('No download URL configured. Ask your admin to set fileUrl in appConfig/version.');
+                    return;
+                }
+                try {
+                    document.getElementById('update-btn').textContent = '⏳ Downloading...';
+                    const response = await fetch(fileUrl);
+                    const html = await response.text();
+                    const blob = new Blob([html], { type: 'text/html' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = 'TBROC_Operational_Management_System.html';
+                    a.click();
+                    URL.revokeObjectURL(a.href);
+                    document.getElementById('update-btn').textContent = '✅ Downloaded! Reopen the new file.';
+                } catch (err) {
+                    alert('Download failed: ' + err.message);
+                    document.getElementById('update-btn').textContent = '🔄 Update Available';
+                }
+            };
+        }
+
+        window.dismissUpdateBanner = function() {
+            document.getElementById('update-banner').style.display = 'none';
+        };
+
         // Auth state
         window.currentUser     = null;
         window.currentUserRole = null;
@@ -2955,6 +3035,8 @@ service cloud.firestore {
         function showApp() {
             document.getElementById('auth-overlay').classList.add('hidden');
             document.getElementById('main-app').style.display = 'block';
+            // Check for updates now that user is authenticated
+            if (window.db) checkForUpdates(window.db);
         }
 
         function hideApp() {
@@ -3985,8 +4067,10 @@ service cloud.firestore {
                 </table>
             `;
 
-            // Assignment history section
+            // Assignment history — only for equipment that currently exists
+            const existingIds = new Set((window.equipment || []).map(e => e.id));
             const txns = (window.transactions || [])
+                .filter(t => existingIds.has(t.equipmentId))
                 .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
             if (txns.length > 0) {
