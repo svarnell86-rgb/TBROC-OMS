@@ -612,6 +612,7 @@
                 <button class="tab-btn" onclick="switchTab('inventory')">Assets</button>
                 <button class="tab-btn" onclick="switchTab('esst')">ESST Operations</button>
                 <button class="tab-btn" onclick="switchTab('techops')">Technical Operations</button>
+                <button class="tab-btn" onclick="switchTab('training')">Training</button>
                 <button class="tab-btn" onclick="switchTab('history')">History</button>
             </div>
         </div>
@@ -1112,6 +1113,12 @@ service cloud.firestore {
                                     </label>
                                 </div>
                             </div>
+                            <div class="form-group" style="margin-top:8px;">
+                                <label style="display:flex; align-items:center; gap:10px; font-size:15px; cursor:pointer;">
+                                    <input type="checkbox" id="polecam-agency-bucket-truck" style="width:16px;height:16px;">
+                                    FDLE Bucket-Truck
+                                </label>
+                            </div>
                             <div class="form-group">
                                 <label>Location / Address</label>
                                 <input type="text" id="polecam-deploy-location" placeholder="Deployment location...">
@@ -1347,6 +1354,54 @@ service cloud.firestore {
                 </div>
             </div>
 
+            <!-- Training Tab -->
+            <div id="training" class="tab-content">
+                <h2>Training</h2>
+
+                <!-- Log Training Form -->
+                <div class="card">
+                    <h3>Log Training Event</h3>
+                    <div class="form-group">
+                        <label>Training Name *</label>
+                        <input type="text" id="training-name" placeholder="Enter name of training...">
+                    </div>
+                    <div class="form-group">
+                        <label>Location</label>
+                        <input type="text" id="training-location" placeholder="Enter location...">
+                    </div>
+                    <div class="grid-2" style="margin-top:4px;">
+                        <div class="form-group">
+                            <label>Start Date *</label>
+                            <input type="date" id="training-date-start">
+                        </div>
+                        <div class="form-group">
+                            <label>End Date</label>
+                            <input type="date" id="training-date-end">
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Start Time</label>
+                            <input type="time" id="training-time-start">
+                        </div>
+                        <div class="form-group">
+                            <label>End Time</label>
+                            <input type="time" id="training-time-end">
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        <button class="btn btn-success no-readonly" onclick="submitTraining()">✔ Submit</button>
+                        <button class="btn btn-warning" onclick="clearTrainingForm()">Clear Form</button>
+                    </div>
+                </div>
+
+                <!-- Training Records -->
+                <div class="search-box">
+                    <input type="text" id="training-search" placeholder="🔍 Search training records..." oninput="renderTrainingList()">
+                </div>
+                <div id="training-list"></div>
+            </div>
+
             <!-- History Tab -->
             <div id="history" class="tab-content">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -1393,6 +1448,10 @@ service cloud.firestore {
                         <label style="display: flex; align-items: center; gap: 8px; font-size: 15px; cursor: pointer; padding: 10px 18px; border: 2px solid #003366; border-radius: 8px; background: white; color: #003366; font-weight: 600;" id="tscm-report-label">
                             <input type="radio" name="history-report-type" value="tscm" onchange="switchHistoryReportType(this.value)" style="accent-color: #003366;">
                             🔍 TSCM
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 15px; cursor: pointer; padding: 10px 18px; border: 2px solid #003366; border-radius: 8px; background: white; color: #003366; font-weight: 600;" id="uas-report-label">
+                            <input type="radio" name="history-report-type" value="uas" onchange="switchHistoryReportType(this.value)" style="accent-color: #003366;">
+                            🛸 UAS
                         </label>
                         <label style="display: flex; align-items: center; gap: 8px; font-size: 15px; cursor: pointer; padding: 10px 18px; border: 2px solid #003366; border-radius: 8px; background: white; color: #003366; font-weight: 600;" id="ve-report-label">
                             <input type="radio" name="history-report-type" value="ve" onchange="switchHistoryReportType(this.value)" style="accent-color: #003366;">
@@ -1743,6 +1802,33 @@ service cloud.firestore {
                     <div id="hist-tscm-list"></div>
                 </div>
 
+                <!-- UAS History Section -->
+                <div id="history-uas-section" style="display:none;">
+                    <div class="card">
+                        <h3>Filter UAS Records</h3>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label>Agency</label>
+                                <input type="text" id="hist-uas-filter-agency" placeholder="Search by agency...">
+                            </div>
+                            <div class="form-group">
+                                <label>Date From</label>
+                                <input type="date" id="hist-uas-filter-from">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Date To</label>
+                            <input type="date" id="hist-uas-filter-to">
+                        </div>
+                        <button class="btn" onclick="applyUASHistoryFilters()">Apply Filters</button>
+                        <button class="btn btn-warning" onclick="clearUASHistoryFilters()">Clear Filters</button>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" id="hist-uas-search" placeholder="🔍 Search UAS records..." oninput="applyUASHistoryFilters()">
+                    </div>
+                    <div id="hist-uas-list"></div>
+                </div>
+
             </div>
             <!-- Technical Operations Tab -->
             <div id="techops" class="tab-content">
@@ -1753,6 +1839,7 @@ service cloud.firestore {
                     <button id="techops-subtab-btn-maintenance" class="techops-subtab-btn" onclick="switchTechOpsSubTab('maintenance')" style="padding:10px 22px; border:none; border-radius:8px 8px 0 0; cursor:pointer; font-size:14px; font-weight:600; background:#003366; color:white; margin-bottom:-2px; border-bottom:2px solid #003366;">🔧 Maintenance</button>
                     <button id="techops-subtab-btn-videoenhancement" class="techops-subtab-btn" onclick="switchTechOpsSubTab('videoenhancement')" style="padding:10px 22px; border:none; border-radius:8px 8px 0 0; cursor:pointer; font-size:14px; font-weight:600; background:#f0f0f0; color:#333; margin-bottom:-2px; border-bottom:2px solid transparent;">🎥 A/V Enhancement</button>
                     <button id="techops-subtab-btn-cellebrite" class="techops-subtab-btn" onclick="switchTechOpsSubTab('cellebrite')" style="padding:10px 22px; border:none; border-radius:8px 8px 0 0; cursor:pointer; font-size:14px; font-weight:600; background:#f0f0f0; color:#333; margin-bottom:-2px; border-bottom:2px solid transparent;">📱 Cellebrite</button>
+                    <button id="techops-subtab-btn-uas" class="techops-subtab-btn" onclick="switchTechOpsSubTab('uas')" style="padding:10px 22px; border:none; border-radius:8px 8px 0 0; cursor:pointer; font-size:14px; font-weight:600; background:#f0f0f0; color:#333; margin-bottom:-2px; border-bottom:2px solid transparent;">🛸 UAS</button>
                 </div>
 
                 <!-- Sub-tab: Maintenance -->
@@ -1858,6 +1945,71 @@ service cloud.firestore {
                     <div id="maintenance-list"></div>
                 </div>
 
+                <!-- Sub-tab: UAS (Tech Ops) -->
+                <div id="techops-subtab-uas" style="display:none;">
+                    <div class="card">
+                        <h3>Log UAS Maintenance Record</h3>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label>UAS Name / ID *</label>
+                                <input type="text" id="uas-maint-name" placeholder="e.g., DJI Mavic 3 Unit 1">
+                            </div>
+                            <div class="form-group">
+                                <label>Serial Number</label>
+                                <input type="text" id="uas-maint-serial" placeholder="Serial number...">
+                            </div>
+                        </div>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label>Make</label>
+                                <input type="text" id="uas-maint-make" placeholder="e.g., DJI, Autel...">
+                            </div>
+                            <div class="form-group">
+                                <label>Model</label>
+                                <input type="text" id="uas-maint-model" placeholder="e.g., Mavic 3, EVO II...">
+                            </div>
+                        </div>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label>Maintenance Type *</label>
+                                <select id="uas-maint-type">
+                                    <option value="">Select type...</option>
+                                    <option value="Parts Replacement">Parts Replacement</option>
+                                    <option value="Software Update">Software Update</option>
+                                    <option value="Firmware Update">Firmware Update</option>
+                                    <option value="Propeller Replacement">Propeller Replacement</option>
+                                    <option value="Battery Service">Battery Service</option>
+                                    <option value="Camera Calibration">Camera Calibration</option>
+                                    <option value="Repair">Repair</option>
+                                    <option value="Inspection">Inspection</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Date *</label>
+                                <input type="date" id="uas-maint-date">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Performed By</label>
+                            <input type="text" id="uas-maint-performed-by" placeholder="Name or vendor...">
+                        </div>
+                        <div class="form-group">
+                            <label>Description / Notes *</label>
+                            <textarea id="uas-maint-description" placeholder="Describe the maintenance performed..." style="min-height:100px;"></textarea>
+                        </div>
+                        <div style="display:flex; gap:10px; margin-top:5px;">
+                            <button class="btn btn-success no-readonly" onclick="submitUASMaint()">✔ Log Maintenance</button>
+                            <button class="btn btn-warning" onclick="clearUASMaintForm()">Clear Form</button>
+                        </div>
+                    </div>
+
+                    <div class="search-box">
+                        <input type="text" id="uas-maint-search" placeholder="🔍 Search UAS maintenance records..." oninput="renderUASMaintList()">
+                    </div>
+                    <div id="uas-maint-list"></div>
+                </div>
+
                 <!-- Sub-tab: A/V Enhancement -->
                 <div id="techops-subtab-videoenhancement" style="display:none;">
                     <div class="card">
@@ -1960,6 +2112,7 @@ service cloud.firestore {
                     <button id="esst-subtab-btn-courtorders" class="esst-subtab-btn" onclick="switchESSTSubTab('courtorders')" style="padding:10px 22px; border:none; border-radius:8px 8px 0 0; cursor:pointer; font-size:14px; font-weight:600; background:#003366; color:white; margin-bottom:-2px; border-bottom:2px solid #003366;">📡 Court Orders</button>
                     <button id="esst-subtab-btn-cuas" class="esst-subtab-btn" onclick="switchESSTSubTab('cuas')" style="padding:10px 22px; border:none; border-radius:8px 8px 0 0; cursor:pointer; font-size:14px; font-weight:600; background:#f0f0f0; color:#333; margin-bottom:-2px; border-bottom:2px solid transparent;">🚁 cUAS</button>
                     <button id="esst-subtab-btn-tscm" class="esst-subtab-btn" onclick="switchESSTSubTab('tscm')" style="padding:10px 22px; border:none; border-radius:8px 8px 0 0; cursor:pointer; font-size:14px; font-weight:600; background:#f0f0f0; color:#333; margin-bottom:-2px; border-bottom:2px solid transparent;">🔍 TSCM</button>
+                    <button id="esst-subtab-btn-uas" class="esst-subtab-btn" onclick="switchESSTSubTab('uas')" style="padding:10px 22px; border:none; border-radius:8px 8px 0 0; cursor:pointer; font-size:14px; font-weight:600; background:#f0f0f0; color:#333; margin-bottom:-2px; border-bottom:2px solid transparent;">🛸 UAS</button>
                 </div>
 
                 <!-- Sub-tab: Court Orders -->
@@ -2213,6 +2366,79 @@ service cloud.firestore {
                 </div>
                 </div><!-- end esst-subtab-tscm -->
 
+                <!-- Sub-tab: UAS -->
+                <div id="esst-subtab-uas" style="display:none;">
+                <div class="card">
+                    <h3>Submit UAS Request</h3>
+                    <div class="form-group">
+                        <label>Requesting Agency</label>
+                        <select id="uas-requesting-agency">
+                            <option value="">Select requesting agency...</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-top:12px;">
+                        <label>Agency Type</label>
+                        <div style="display:flex; flex-wrap:wrap; gap:16px; margin-top:8px;">
+                            <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="uas-agency-local" style="width:16px;height:16px;"> Local</label>
+                            <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="uas-agency-state" style="width:16px;height:16px;"> State</label>
+                            <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="uas-agency-federal" style="width:16px;height:16px;"> Federal</label>
+                            <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="uas-agency-fdle" style="width:16px;height:16px;"> FDLE</label>
+                            <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="uas-agency-interstate" style="width:16px;height:16px;"> Interstate</label>
+                        </div>
+                    </div>
+                    <div class="grid-2" style="margin-top:12px;">
+                        <div class="form-group">
+                            <label>Start Date *</label>
+                            <input type="date" id="uas-date-start">
+                        </div>
+                        <div class="form-group">
+                            <label>End Date</label>
+                            <input type="date" id="uas-date-end">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Location</label>
+                        <input type="text" id="uas-location" placeholder="Enter location...">
+                    </div>
+                    <div class="card" style="margin-top:12px; padding:15px; background:#f8f9fa;">
+                        <h3 style="margin-bottom:12px;">UAS Information</h3>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label>Type of UAS</label>
+                                <input type="text" id="uas-type" placeholder="e.g., Fixed Wing, Multirotor...">
+                            </div>
+                            <div class="form-group">
+                                <label>Make</label>
+                                <input type="text" id="uas-make" placeholder="e.g., DJI, Autel...">
+                            </div>
+                        </div>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label>Model</label>
+                                <input type="text" id="uas-model" placeholder="e.g., Mavic 3, EVO II...">
+                            </div>
+                            <div class="form-group">
+                                <label>Serial Number</label>
+                                <input type="text" id="uas-serial" placeholder="Serial number...">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top:12px;">
+                        <label>Additional Comments</label>
+                        <textarea id="uas-comments" placeholder="Enter any additional comments or notes..." style="min-height:100px;"></textarea>
+                    </div>
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        <button class="btn btn-success no-readonly" onclick="submitUASRequest()">✔ Submit Request</button>
+                        <button class="btn btn-warning" onclick="clearUASForm()">Clear Form</button>
+                    </div>
+                </div>
+
+                <div id="uas-list-section" style="margin-top:30px; display:none;">
+                    <h3 style="color:#003366; margin-bottom:12px;">🛸 Submitted UAS Requests</h3>
+                    <div id="uas-list"></div>
+                </div>
+                </div><!-- end esst-subtab-uas -->
+
             </div><!-- end esst tab-content -->
         </div>
     </div>
@@ -2266,6 +2492,10 @@ service cloud.firestore {
                     <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:8px 12px; border:1px solid #ddd; border-radius:6px;">
                         <input type="checkbox" name="print-report-type" value="tscm" style="width:16px;height:16px;">
                         🔍 TSCM
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:8px 12px; border:1px solid #ddd; border-radius:6px;">
+                        <input type="checkbox" name="print-report-type" value="uas" style="width:16px;height:16px;">
+                        🛸 UAS
                     </label>
                     <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:8px 12px; border:1px solid #ddd; border-radius:6px;">
                         <input type="checkbox" name="print-report-type" value="ve" style="width:16px;height:16px;">
@@ -3069,6 +3299,39 @@ service cloud.firestore {
             );
             window.unsubscribers.push(celUnsubscribe);
 
+            // Listen to ESST UAS entries
+            const uasUnsubscribe = safeListener(
+                query(collection(window.db, 'uasEntries'), orderBy('submittedAt', 'desc')),
+                (snapshot) => {
+                    window.uasEntries = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    if (typeof renderUASList === 'function') renderUASList();
+                },
+                'uasEntries'
+            );
+            window.unsubscribers.push(uasUnsubscribe);
+
+            // Listen to UAS maintenance records
+            const uasMaintUnsubscribe = safeListener(
+                query(collection(window.db, 'uasMaintRecords'), orderBy('submittedAt', 'desc')),
+                (snapshot) => {
+                    window.uasMaintRecords = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    if (typeof renderUASMaintList === 'function') renderUASMaintList();
+                },
+                'uasMaintRecords'
+            );
+            window.unsubscribers.push(uasMaintUnsubscribe);
+
+            // Listen to Training records
+            const trainingUnsubscribe = safeListener(
+                query(collection(window.db, 'trainingRecords'), orderBy('submittedAt', 'desc')),
+                (snapshot) => {
+                    window.trainingRecords = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    if (typeof renderTrainingList === 'function') renderTrainingList();
+                },
+                'trainingRecords'
+            );
+            window.unsubscribers.push(trainingUnsubscribe);
+
             // Listen to TSCM entries
             const tscmUnsubscribe = safeListener(
                 query(collection(window.db, 'tscmEntries'), orderBy('submittedAt', 'desc')),
@@ -3757,6 +4020,7 @@ service cloud.firestore {
                         ${d.agencyFederal    ? '<span class="status-badge status-available" style="font-size:11px;">🏛 Federal</span>'    : ''}
                         ${d.agencyFdle       ? '<span class="status-badge status-available" style="font-size:11px;">🏛 FDLE</span>'       : ''}
                         ${d.agencyInterstate ? '<span class="status-badge status-available" style="font-size:11px;">🏛 Interstate</span>' : ''}
+                        ${d.agencyBucketTruck ? '<span class="status-badge status-available" style="font-size:11px;">🚛 FDLE Bucket-Truck</span>' : ''}
                     </div>` : ''}
                     ${d.notes ? `<div style="margin-top:6px; font-size:13px; color:#666;">📝 ${d.notes}</div>` : ''}
                 </div>
@@ -3920,10 +4184,11 @@ service cloud.firestore {
             if (tabName === 'history') { updateHistoryList(); applyPRTTFilters(); applyCUASFilters(); }
             if (tabName === 'esst') { switchESSTSubTab('courtorders'); populatePRTTAgencyDropdown(); }
             if (tabName === 'techops') { switchTechOpsSubTab('maintenance'); }
+            if (tabName === 'training') { renderTrainingList(); }
         }
 
         function switchESSTSubTab(subTab) {
-            ['courtorders', 'cuas', 'tscm'].forEach(s => {
+            ['courtorders', 'cuas', 'tscm', 'uas'].forEach(s => {
                 const panel = document.getElementById('esst-subtab-' + s);
                 if (panel) panel.style.display = 'none';
                 const btn = document.getElementById('esst-subtab-btn-' + s);
@@ -3948,6 +4213,10 @@ service cloud.firestore {
             if (subTab === 'tscm') {
                 populateTSCMAgencyDropdown();
                 renderTSCMList();
+            }
+            if (subTab === 'uas') {
+                populateUASAgencyDropdown();
+                renderUASList();
             }
         }
         window.switchESSTSubTab = switchESSTSubTab;
@@ -4047,7 +4316,7 @@ service cloud.firestore {
         window.renderTSCMList = renderTSCMList;
 
         function switchTechOpsSubTab(subTab) {
-            ['maintenance','videoenhancement','cellebrite'].forEach(s => {
+            ['maintenance','uas','videoenhancement','cellebrite'].forEach(s => {
                 const panel = document.getElementById('techops-subtab-' + s);
                 if (panel) panel.style.display = 'none';
                 const btn = document.getElementById('techops-subtab-btn-' + s);
@@ -4057,7 +4326,8 @@ service cloud.firestore {
             if (activePanel) activePanel.style.display = 'block';
             const activeBtn = document.getElementById('techops-subtab-btn-' + subTab);
             if (activeBtn) { activeBtn.style.background = '#003366'; activeBtn.style.color = 'white'; activeBtn.style.borderBottom = '2px solid #003366'; }
-            if (subTab === 'maintenance') { populateMaintenanceEquipmentDropdowns(); applyMaintenanceFilters(); }
+            if (subTab === 'maintenance')      { populateMaintenanceEquipmentDropdowns(); applyMaintenanceFilters(); }
+            if (subTab === 'uas')              { renderUASMaintList(); }
             if (subTab === 'videoenhancement') { populateTechOpsAgencyDropdown('ve-requesting-agency'); renderVEList(); }
             if (subTab === 'cellebrite')       { populateTechOpsAgencyDropdown('cel-requesting-agency'); renderCelList(); }
         }
@@ -4227,6 +4497,289 @@ service cloud.firestore {
                 </div>`).join('');
         }
         window.renderCelList = renderCelList;
+
+        // ===================== Training =====================
+
+        window.trainingRecords = window.trainingRecords || [];
+
+        window.submitTraining = async function() {
+            const name      = document.getElementById('training-name').value.trim();
+            const dateStart = document.getElementById('training-date-start').value;
+            if (!name || !dateStart) { alert('Training Name and Start Date are required.'); return; }
+
+            const record = {
+                name,
+                location:   document.getElementById('training-location').value.trim(),
+                dateStart,
+                dateEnd:    document.getElementById('training-date-end').value,
+                timeStart:  document.getElementById('training-time-start').value,
+                timeEnd:    document.getElementById('training-time-end').value,
+                submittedAt: new Date().toISOString()
+            };
+
+            if (window.storageMode === 'firebase' && window.db) {
+                try {
+                    const { addDoc, collection } = window.firebaseFunctions;
+                    await addDoc(collection(window.db, 'trainingRecords'), record);
+                } catch (err) { alert('Error saving: ' + err.message); return; }
+            } else {
+                record.id = Date.now().toString();
+                window.trainingRecords.unshift(record);
+                renderTrainingList();
+            }
+            clearTrainingForm();
+            alert('Training record submitted successfully!');
+        };
+
+        window.clearTrainingForm = function() {
+            ['training-name','training-location','training-date-start','training-date-end',
+             'training-time-start','training-time-end']
+                .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+        };
+
+        window.deleteTrainingRecord = async function(id) {
+            if (!confirm('Delete this training record?')) return;
+            if (window.storageMode === 'firebase' && window.db) {
+                try { const { deleteDoc, doc } = window.firebaseFunctions; await deleteDoc(doc(window.db, 'trainingRecords', id)); }
+                catch(err) { alert('Error: ' + err.message); }
+            } else {
+                window.trainingRecords = (window.trainingRecords || []).filter(r => r.id !== id);
+                renderTrainingList();
+            }
+        };
+
+        function formatTime(t) {
+            if (!t) return '—';
+            const [h, m] = t.split(':');
+            const hr = parseInt(h);
+            return `${hr % 12 || 12}:${m} ${hr < 12 ? 'AM' : 'PM'}`;
+        }
+
+        function renderTrainingList() {
+            const div = document.getElementById('training-list');
+            if (!div) return;
+            const search = (document.getElementById('training-search')?.value || '').toLowerCase();
+            let records = (window.trainingRecords || []).filter(r => {
+                if (!search) return true;
+                return `${r.name} ${r.location}`.toLowerCase().includes(search);
+            }).sort((a,b) => b.submittedAt > a.submittedAt ? 1 : -1);
+
+            if (!records.length) {
+                div.innerHTML = '<div class="empty-state"><p>No training records found</p></div>';
+                return;
+            }
+            div.innerHTML = records.map(r => `
+                <div class="card" style="border-left:4px solid #003366; margin-bottom:15px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <strong style="font-size:17px;">🎓 ${r.name}</strong>
+                            ${r.location ? `<div style="font-size:13px;color:#555;margin-top:3px;">📍 ${r.location}</div>` : ''}
+                        </div>
+                        <button class="btn btn-danger btn-sm no-readonly" onclick="deleteTrainingRecord('${r.id}')">🗑 Delete</button>
+                    </div>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; margin-top:12px; font-size:14px;">
+                        <div><span style="color:#666;">Start Date:</span><br>${r.dateStart||'—'}</div>
+                        <div><span style="color:#666;">End Date:</span><br>${r.dateEnd||'—'}</div>
+                        <div><span style="color:#666;">Start Time:</span><br>${formatTime(r.timeStart)}</div>
+                        <div><span style="color:#666;">End Time:</span><br>${formatTime(r.timeEnd)}</div>
+                    </div>
+                    <div style="font-size:11px;color:#999;margin-top:8px;">Logged: ${new Date(r.submittedAt).toLocaleString()}</div>
+                </div>`).join('');
+        }
+        window.renderTrainingList = renderTrainingList;
+
+        // ===================== ESST UAS =====================
+
+        window.uasEntries = window.uasEntries || [];
+
+        function populateUASAgencyDropdown() {
+            const sel = document.getElementById('uas-requesting-agency');
+            if (!sel) return;
+            const prev = sel.value;
+            sel.innerHTML = '<option value="">Select requesting agency...</option>';
+            (window.users || []).filter(u => u.type === 'agency')
+                .sort((a,b) => a.name.localeCompare(b.name))
+                .forEach(a => { sel.innerHTML += `<option value="${a.name}">${a.name}</option>`; });
+            sel.value = prev;
+        }
+        window.populateUASAgencyDropdown = populateUASAgencyDropdown;
+
+        window.submitUASRequest = async function() {
+            const agency    = document.getElementById('uas-requesting-agency').value;
+            const dateStart = document.getElementById('uas-date-start').value;
+            if (!agency || !dateStart) { alert('Please select a requesting agency and start date.'); return; }
+
+            const entry = {
+                requestingAgency: agency,
+                agencyLocal:      document.getElementById('uas-agency-local').checked,
+                agencyState:      document.getElementById('uas-agency-state').checked,
+                agencyFederal:    document.getElementById('uas-agency-federal').checked,
+                agencyFdle:       document.getElementById('uas-agency-fdle').checked,
+                agencyInterstate: document.getElementById('uas-agency-interstate').checked,
+                dateStart,
+                dateEnd:  document.getElementById('uas-date-end').value,
+                location: document.getElementById('uas-location').value.trim(),
+                uasType:  document.getElementById('uas-type').value.trim(),
+                make:     document.getElementById('uas-make').value.trim(),
+                model:    document.getElementById('uas-model').value.trim(),
+                serial:   document.getElementById('uas-serial').value.trim(),
+                comments: document.getElementById('uas-comments').value.trim(),
+                submittedAt: new Date().toISOString()
+            };
+
+            if (window.storageMode === 'firebase' && window.db) {
+                try {
+                    const { addDoc, collection } = window.firebaseFunctions;
+                    await addDoc(collection(window.db, 'uasEntries'), entry);
+                } catch (err) { alert('Error saving: ' + err.message); return; }
+            } else {
+                entry.id = Date.now().toString();
+                window.uasEntries.unshift(entry);
+                renderUASList();
+            }
+            clearUASForm();
+            alert('UAS request submitted successfully!');
+        };
+
+        window.clearUASForm = function() {
+            ['uas-requesting-agency','uas-date-start','uas-date-end','uas-location',
+             'uas-type','uas-make','uas-model','uas-serial','uas-comments']
+                .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+            ['uas-agency-local','uas-agency-state','uas-agency-federal','uas-agency-fdle','uas-agency-interstate']
+                .forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; });
+        };
+
+        window.deleteUASEntry = async function(id) {
+            if (!confirm('Delete this UAS request?')) return;
+            if (window.storageMode === 'firebase' && window.db) {
+                try { const { deleteDoc, doc } = window.firebaseFunctions; await deleteDoc(doc(window.db, 'uasEntries', id)); }
+                catch(err) { alert('Error: ' + err.message); }
+            } else {
+                window.uasEntries = (window.uasEntries || []).filter(e => e.id !== id);
+                renderUASList();
+            }
+        };
+
+        function renderUASList() {
+            const section = document.getElementById('uas-list-section');
+            const list    = document.getElementById('uas-list');
+            if (!list) return;
+            if (!window.uasEntries || !window.uasEntries.length) { if(section) section.style.display = 'none'; return; }
+            if(section) section.style.display = 'block';
+            const agencyBadges = e => [e.agencyLocal&&'Local',e.agencyState&&'State',e.agencyFederal&&'Federal',e.agencyFdle&&'FDLE',e.agencyInterstate&&'Interstate'].filter(Boolean);
+            list.innerHTML = [...window.uasEntries].sort((a,b) => b.submittedAt > a.submittedAt ? 1 : -1).map(e => `
+                <div class="card" style="border-left:4px solid #003366; margin-bottom:15px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <strong style="font-size:16px;">🛸 ${e.requestingAgency || '—'}</strong>
+                            <div style="font-size:12px; color:#666; margin-top:2px;">Submitted: ${new Date(e.submittedAt).toLocaleString()}</div>
+                        </div>
+                        <button class="btn btn-danger btn-sm no-readonly" onclick="deleteUASEntry('${e.id}')">🗑 Delete</button>
+                    </div>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; margin-top:12px; font-size:14px;">
+                        <div><span style="color:#666;">Start Date:</span><br>${e.dateStart||'—'}</div>
+                        <div><span style="color:#666;">End Date:</span><br>${e.dateEnd||'—'}</div>
+                        <div><span style="color:#666;">Location:</span><br>${e.location||'—'}</div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; margin-top:10px; font-size:14px;">
+                        <div><span style="color:#666;">Type of UAS:</span><br>${e.uasType||'—'}</div>
+                        <div><span style="color:#666;">Make:</span><br>${e.make||'—'}</div>
+                        <div><span style="color:#666;">Model:</span><br>${e.model||'—'}</div>
+                        <div><span style="color:#666;">Serial:</span><br>${e.serial||'—'}</div>
+                    </div>
+                    ${agencyBadges(e).length ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">${agencyBadges(e).map(t=>`<span class="status-badge status-available">🏛 ${t}</span>`).join('')}</div>` : ''}
+                    ${e.comments ? `<div style="margin-top:10px;padding:10px;background:#f8f9fa;border-radius:6px;font-size:13px;"><strong>Comments:</strong> ${e.comments}</div>` : ''}
+                </div>`).join('');
+        }
+        window.renderUASList = renderUASList;
+
+        // ===================== Tech Ops UAS Maintenance =====================
+
+        window.uasMaintRecords = window.uasMaintRecords || [];
+
+        window.submitUASMaint = async function() {
+            const name = document.getElementById('uas-maint-name').value.trim();
+            const date = document.getElementById('uas-maint-date').value;
+            const type = document.getElementById('uas-maint-type').value;
+            if (!name || !date || !type) { alert('UAS Name, Date, and Maintenance Type are required.'); return; }
+
+            const record = {
+                name,
+                serial:      document.getElementById('uas-maint-serial').value.trim(),
+                make:        document.getElementById('uas-maint-make').value.trim(),
+                model:       document.getElementById('uas-maint-model').value.trim(),
+                maintType:   type,
+                date,
+                performedBy: document.getElementById('uas-maint-performed-by').value.trim(),
+                description: document.getElementById('uas-maint-description').value.trim(),
+                submittedAt: new Date().toISOString()
+            };
+
+            if (window.storageMode === 'firebase' && window.db) {
+                try {
+                    const { addDoc, collection } = window.firebaseFunctions;
+                    await addDoc(collection(window.db, 'uasMaintRecords'), record);
+                } catch (err) { alert('Error saving: ' + err.message); return; }
+            } else {
+                record.id = Date.now().toString();
+                window.uasMaintRecords.unshift(record);
+                renderUASMaintList();
+            }
+            clearUASMaintForm();
+            alert('UAS maintenance record logged successfully!');
+        };
+
+        window.clearUASMaintForm = function() {
+            ['uas-maint-name','uas-maint-serial','uas-maint-make','uas-maint-model',
+             'uas-maint-type','uas-maint-date','uas-maint-performed-by','uas-maint-description']
+                .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+        };
+
+        window.deleteUASMaint = async function(id) {
+            if (!confirm('Delete this UAS maintenance record?')) return;
+            if (window.storageMode === 'firebase' && window.db) {
+                try { const { deleteDoc, doc } = window.firebaseFunctions; await deleteDoc(doc(window.db, 'uasMaintRecords', id)); }
+                catch(err) { alert('Error: ' + err.message); }
+            } else {
+                window.uasMaintRecords = (window.uasMaintRecords || []).filter(r => r.id !== id);
+                renderUASMaintList();
+            }
+        };
+
+        function renderUASMaintList() {
+            const div = document.getElementById('uas-maint-list');
+            if (!div) return;
+            const search = (document.getElementById('uas-maint-search')?.value || '').toLowerCase();
+            let records = (window.uasMaintRecords || []).filter(r => {
+                if (!search) return true;
+                return `${r.name} ${r.make} ${r.model} ${r.serial} ${r.maintType} ${r.performedBy} ${r.description}`.toLowerCase().includes(search);
+            }).sort((a,b) => b.submittedAt > a.submittedAt ? 1 : -1);
+
+            if (!records.length) {
+                div.innerHTML = '<div class="empty-state"><p>No UAS maintenance records found</p></div>';
+                return;
+            }
+            div.innerHTML = records.map(r => `
+                <div class="card" style="border-left:4px solid #003366; margin-bottom:15px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <strong style="font-size:16px;">🛸 ${r.name}</strong>
+                            <span class="status-badge status-checked-out" style="margin-left:8px;">${r.maintType}</span>
+                        </div>
+                        <button class="btn btn-danger btn-sm no-readonly" onclick="deleteUASMaint('${r.id}')">🗑 Delete</button>
+                    </div>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; margin-top:12px; font-size:14px;">
+                        <div><span style="color:#666;">Make:</span><br>${r.make||'—'}</div>
+                        <div><span style="color:#666;">Model:</span><br>${r.model||'—'}</div>
+                        <div><span style="color:#666;">Serial:</span><br>${r.serial||'—'}</div>
+                        <div><span style="color:#666;">Date:</span><br>${r.date||'—'}</div>
+                        <div><span style="color:#666;">Performed By:</span><br>${r.performedBy||'—'}</div>
+                    </div>
+                    ${r.description ? `<div style="margin-top:10px;padding:10px;background:#f8f9fa;border-radius:6px;font-size:13px;"><strong>Notes:</strong> ${r.description}</div>` : ''}
+                    <div style="font-size:11px;color:#999;margin-top:8px;">Logged: ${new Date(r.submittedAt).toLocaleString()}</div>
+                </div>`).join('');
+        }
+        window.renderUASMaintList = renderUASMaintList;
 
         // Firebase listeners for veEntries and celEntries
         // (called from within initializeFirebase after db is ready)
@@ -5042,6 +5595,7 @@ service cloud.firestore {
             const veVisible       = document.getElementById('history-ve-section')?.style.display  !== 'none';
             const celVisible      = document.getElementById('history-cel-section')?.style.display !== 'none';
             const tscmVisible     = document.getElementById('history-tscm-section')?.style.display !== 'none';
+            const uasVisible      = document.getElementById('history-uas-section')?.style.display  !== 'none';
 
             // Uncheck all first
             document.querySelectorAll('input[name="print-report-type"]').forEach(cb => cb.checked = false);
@@ -5057,6 +5611,7 @@ service cloud.firestore {
             else if (veVisible)       active = 've';
             else if (celVisible)      active = 'cel';
             else if (tscmVisible)     active = 'tscm';
+            else if (uasVisible)      active = 'uas';
 
             const activeCb = document.querySelector(`input[name="print-report-type"][value="${active}"]`);
             if (activeCb) activeCb.checked = true;
@@ -5140,7 +5695,7 @@ service cloud.firestore {
                         ${cams.sort((a,b)=>(a.name||'').localeCompare(b.name||'',undefined,{numeric:true,sensitivity:'base'})).map(c => {
                             const cur = c.deployed && c.deployDate ? calcDaysDeployed(c.deployDate, null) : 0;
                             const tot = (c.totalDaysDeployed||0) + cur;
-                            const agType = [c.agencyLocal&&'Local',c.agencyState&&'State',c.agencyFederal&&'Federal',c.agencyFdle&&'FDLE',c.agencyInterstate&&'Interstate'].filter(Boolean).join(', ')||'—';
+                            const agType = [c.agencyLocal&&'Local',c.agencyState&&'State',c.agencyFederal&&'Federal',c.agencyFdle&&'FDLE',c.agencyInterstate&&'Interstate',c.agencyBucketTruck&&'FDLE Bucket-Truck'].filter(Boolean).join(', ')||'—';
                             return `<tr>
                                 <td style="border:1px solid #ddd;padding:8px;"><strong>${c.name}</strong></td>
                                 <td style="border:1px solid #ddd;padding:8px;">${c.model||'—'}</td>
@@ -5170,7 +5725,7 @@ service cloud.firestore {
                         ${deps.sort((a,b)=>b.deployDate>a.deployDate?1:-1).map(d=>`<tr>
                             <td style="border:1px solid #ddd;padding:8px;">${d.cameraName||'—'}</td>
                             <td style="border:1px solid #ddd;padding:8px;">${d.userName||'—'}</td>
-                            <td style="border:1px solid #ddd;padding:8px;">${[d.agencyLocal&&'Local',d.agencyState&&'State',d.agencyFederal&&'Federal',d.agencyFdle&&'FDLE',d.agencyInterstate&&'Interstate'].filter(Boolean).join(', ')||'—'}</td>
+                            <td style="border:1px solid #ddd;padding:8px;">${[d.agencyLocal&&'Local',d.agencyState&&'State',d.agencyFederal&&'Federal',d.agencyFdle&&'FDLE',d.agencyInterstate&&'Interstate',d.agencyBucketTruck&&'FDLE Bucket-Truck'].filter(Boolean).join(', ')||'—'}</td>
                             <td style="border:1px solid #ddd;padding:8px;">${d.location||'—'}</td>
                             <td style="border:1px solid #ddd;padding:8px;">${d.deployDate||'—'}</td>
                             <td style="border:1px solid #ddd;padding:8px;">${d.retrieveDate||'Active'}</td>
@@ -5509,7 +6064,7 @@ service cloud.firestore {
                         </tr></thead>
                         <tbody>
                         ${deps.sort((a,b) => b.deployDate > a.deployDate ? 1 : -1).map(d => {
-                            const ag  = [d.agencyLocal&&'Local',d.agencyState&&'State',d.agencyFederal&&'Federal',d.agencyFdle&&'FDLE',d.agencyInterstate&&'Interstate'].filter(Boolean).join(', ') || '—';
+                            const ag  = [d.agencyLocal&&'Local',d.agencyState&&'State',d.agencyFederal&&'Federal',d.agencyFdle&&'FDLE',d.agencyInterstate&&'Interstate',d.agencyBucketTruck&&'FDLE Bucket-Truck'].filter(Boolean).join(', ') || '—';
                             const veh = [d.vehicleYear, d.vehicleMake, d.vehicleModel, d.vehicleColor, d.vehiclePlate ? `(${d.vehiclePlate})` : ''].filter(Boolean).join(' ') || '—';
                             const days = d.daysDeployed !== null && d.daysDeployed !== undefined ? d.daysDeployed : calcDaysDeployed(d.deployDate, d.retrieveDate);
                             return `<tr>
@@ -5555,6 +6110,50 @@ service cloud.firestore {
                                 <td style="border:1px solid #ddd;padding:8px;">${e.dateStart||'—'}</td>
                                 <td style="border:1px solid #ddd;padding:8px;">${e.dateEnd||'—'}</td>
                                 <td style="border:1px solid #ddd;padding:8px;">${e.location||'—'}</td>
+                                <td style="border:1px solid #ddd;padding:8px;">${e.comments||'—'}</td>
+                                <td style="border:1px solid #ddd;padding:8px;">${formatDateTime(e.submittedAt)}</td>
+                            </tr>`;
+                        }).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+
+            if (reportType === 'uas') {
+                // ---- UAS Report ----
+                const entries = window.uasEntries || [];
+                if (includeSummary) {
+                    printContent += `<div class="print-info"><div><strong>Total UAS Requests:</strong> ${entries.length}</div></div>`;
+                }
+                printContent += `
+                    <h3 style="margin:16px 0 10px;">UAS Requests</h3>
+                    <table style="width:100%; border-collapse:collapse;">
+                        <thead><tr style="background:#f8f9fa;">
+                            <th style="border:1px solid #ddd;padding:8px;">Requesting Agency</th>
+                            <th style="border:1px solid #ddd;padding:8px;">Agency Type</th>
+                            <th style="border:1px solid #ddd;padding:8px;">Start Date</th>
+                            <th style="border:1px solid #ddd;padding:8px;">End Date</th>
+                            <th style="border:1px solid #ddd;padding:8px;">Location</th>
+                            <th style="border:1px solid #ddd;padding:8px;">Type of UAS</th>
+                            <th style="border:1px solid #ddd;padding:8px;">Make</th>
+                            <th style="border:1px solid #ddd;padding:8px;">Model</th>
+                            <th style="border:1px solid #ddd;padding:8px;">Serial</th>
+                            <th style="border:1px solid #ddd;padding:8px;">Comments</th>
+                            <th style="border:1px solid #ddd;padding:8px;">Submitted</th>
+                        </tr></thead>
+                        <tbody>
+                        ${[...entries].sort((a,b)=>b.submittedAt>a.submittedAt?1:-1).map(e=>{
+                            const ag=[e.agencyLocal&&'Local',e.agencyState&&'State',e.agencyFederal&&'Federal',e.agencyFdle&&'FDLE',e.agencyInterstate&&'Interstate'].filter(Boolean).join(', ')||'—';
+                            return `<tr>
+                                <td style="border:1px solid #ddd;padding:8px;">${e.requestingAgency||'—'}</td>
+                                <td style="border:1px solid #ddd;padding:8px;">${ag}</td>
+                                <td style="border:1px solid #ddd;padding:8px;">${e.dateStart||'—'}</td>
+                                <td style="border:1px solid #ddd;padding:8px;">${e.dateEnd||'—'}</td>
+                                <td style="border:1px solid #ddd;padding:8px;">${e.location||'—'}</td>
+                                <td style="border:1px solid #ddd;padding:8px;">${e.uasType||'—'}</td>
+                                <td style="border:1px solid #ddd;padding:8px;">${e.make||'—'}</td>
+                                <td style="border:1px solid #ddd;padding:8px;">${e.model||'—'}</td>
+                                <td style="border:1px solid #ddd;padding:8px;">${e.serial||'—'}</td>
                                 <td style="border:1px solid #ddd;padding:8px;">${e.comments||'—'}</td>
                                 <td style="border:1px solid #ddd;padding:8px;">${formatDateTime(e.submittedAt)}</td>
                             </tr>`;
@@ -5648,6 +6247,7 @@ service cloud.firestore {
                 t === 'polecams' ? 'Covert/Overt Video' :
                 t === 'gps' ? 'GPS Vehicle Tracker' :
                 t === 'tscm' ? 'TSCM' :
+                t === 'uas' ? 'UAS' :
                 t === 've' ? 'A/V Enhancement' :
                 t === 'cel' ? 'Cellebrite' :
                 'Check In/Out').join(', ')} Report</p></div>`;
@@ -5999,7 +6599,7 @@ service cloud.firestore {
             // Hide all sections
             ['history-checkinout-section','history-prtt-section','history-cuas-section',
              'history-maintenance-section','history-radios-section','history-polecams-section',
-             'history-gps-section','history-ve-section','history-cel-section','history-tscm-section']
+             'history-gps-section','history-uas-section','history-ve-section','history-cel-section','history-tscm-section']
                 .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
 
             // Show selected section
@@ -6014,6 +6614,7 @@ service cloud.firestore {
                 've':          () => { const el = document.getElementById('history-ve-section'); if(el){ el.style.display='block'; applyVEHistoryFilters(); } },
                 'cel':         () => { const el = document.getElementById('history-cel-section'); if(el){ el.style.display='block'; applyCelHistoryFilters(); } },
                 'tscm':        () => { const el = document.getElementById('history-tscm-section'); if(el){ el.style.display='block'; applyTSCMHistoryFilters(); } },
+                'uas':         () => { const el = document.getElementById('history-uas-section'); if(el){ el.style.display='block'; applyUASHistoryFilters(); } },
             };
             if (map[type]) map[type]();
 
@@ -7055,7 +7656,8 @@ service cloud.firestore {
                     agencyState:      document.getElementById('polecam-agency-state').checked,
                     agencyFederal:    document.getElementById('polecam-agency-federal').checked,
                     agencyFdle:       document.getElementById('polecam-agency-fdle').checked,
-                    agencyInterstate: document.getElementById('polecam-agency-interstate').checked
+                    agencyInterstate: document.getElementById('polecam-agency-interstate').checked,
+                    agencyBucketTruck: document.getElementById('polecam-agency-bucket-truck').checked
                 };
                 if (!userId) { alert('Please select an agency.'); return; }
                 const user = (window.users || []).find(u => u.id === userId);
@@ -7142,7 +7744,7 @@ service cloud.firestore {
             document.getElementById('polecam-deploy-location').value = '';
             document.getElementById('polecam-action-notes').value = '';
             ['polecam-agency-local','polecam-agency-state','polecam-agency-federal',
-             'polecam-agency-fdle','polecam-agency-interstate']
+             'polecam-agency-fdle','polecam-agency-interstate','polecam-agency-bucket-truck']
                 .forEach(id => document.getElementById(id).checked = false);
             populatePoleCamDropdowns();
             renderPoleCamList();
@@ -7200,6 +7802,7 @@ service cloud.firestore {
                         ${d.agencyFederal    ? '<span class="status-badge status-available" style="font-size:11px;">🏛 Federal</span>'    : ''}
                         ${d.agencyFdle       ? '<span class="status-badge status-available" style="font-size:11px;">🏛 FDLE</span>'       : ''}
                         ${d.agencyInterstate ? '<span class="status-badge status-available" style="font-size:11px;">🏛 Interstate</span>' : ''}
+                        ${d.agencyBucketTruck ? '<span class="status-badge status-available" style="font-size:11px;">🚛 FDLE Bucket-Truck</span>' : ''}
                     </div>` : ''}
                     ${d.notes ? `<div style="margin-top:6px; font-size:13px; color:#666;">📝 ${d.notes}</div>` : ''}
                 </div>
@@ -7273,6 +7876,7 @@ service cloud.firestore {
                                         ${c.agencyFederal    ? '<span class="status-badge status-available" style="font-size:11px;">Federal</span>'    : ''}
                                         ${c.agencyFdle       ? '<span class="status-badge status-available" style="font-size:11px;">FDLE</span>'       : ''}
                                         ${c.agencyInterstate ? '<span class="status-badge status-available" style="font-size:11px;">Interstate</span>' : ''}
+                                        ${c.agencyBucketTruck ? '<span class="status-badge status-available" style="font-size:11px;">FDLE Bucket-Truck</span>' : ''}
                                     </div>` : ''}
                                 </td>
                                 <td style="white-space:nowrap;">
@@ -7306,6 +7910,65 @@ service cloud.firestore {
             document.getElementById('edit-polecam-modal').classList.remove('active');
         }
         window.closeEditPoleCamDialog = closeEditPoleCamDialog;
+
+        // ===================== UAS History Filter Functions =====================
+
+        function applyUASHistoryFilters() {
+            const agencyFilter = (document.getElementById('hist-uas-filter-agency')?.value || '').toLowerCase();
+            const dateFrom     = document.getElementById('hist-uas-filter-from')?.value || '';
+            const dateTo       = document.getElementById('hist-uas-filter-to')?.value   || '';
+            const searchTerm   = (document.getElementById('hist-uas-search')?.value     || '').toLowerCase();
+
+            let filtered = (window.uasEntries || []).filter(e => {
+                if (agencyFilter && !(e.requestingAgency || '').toLowerCase().includes(agencyFilter)) return false;
+                const d = e.dateStart || '';
+                if (dateFrom && d < dateFrom) return false;
+                if (dateTo   && d > dateTo)   return false;
+                if (searchTerm) {
+                    const hay = `${e.requestingAgency} ${e.location} ${e.uasType} ${e.make} ${e.model} ${e.serial} ${e.comments}`.toLowerCase();
+                    if (!hay.includes(searchTerm)) return false;
+                }
+                return true;
+            }).sort((a,b) => b.submittedAt > a.submittedAt ? 1 : -1);
+
+            renderUASHistoryList(filtered);
+        }
+        window.applyUASHistoryFilters = applyUASHistoryFilters;
+
+        function clearUASHistoryFilters() {
+            ['hist-uas-filter-agency','hist-uas-filter-from','hist-uas-filter-to','hist-uas-search']
+                .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+            applyUASHistoryFilters();
+        }
+        window.clearUASHistoryFilters = clearUASHistoryFilters;
+
+        function renderUASHistoryList(entries) {
+            const div = document.getElementById('hist-uas-list');
+            if (!div) return;
+            if (!entries || !entries.length) {
+                div.innerHTML = '<div class="empty-state"><p>No UAS records found</p></div>';
+                return;
+            }
+            div.innerHTML = `<div style="margin-bottom:10px;color:#666;"><strong>Showing ${entries.length} record${entries.length!==1?'s':''}</strong></div>` +
+            entries.map(e => {
+                const badges = [e.agencyLocal&&'Local',e.agencyState&&'State',e.agencyFederal&&'Federal',e.agencyFdle&&'FDLE',e.agencyInterstate&&'Interstate'].filter(Boolean);
+                return `<div class="history-item" style="border-left-color:#003366;">
+                    <div class="timestamp">${formatDateTime(e.submittedAt)}</div>
+                    <div class="action"><strong>🛸 UAS:</strong> ${e.requestingAgency || '—'}</div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-top:8px;font-size:13px;color:#555;">
+                        <div>📅 <strong>Start:</strong> ${e.dateStart||'—'}</div>
+                        <div>📅 <strong>End:</strong> ${e.dateEnd||'—'}</div>
+                        <div>📍 <strong>Location:</strong> ${e.location||'—'}</div>
+                        <div>🛸 <strong>Type:</strong> ${e.uasType||'—'}</div>
+                        <div>🔧 <strong>Make:</strong> ${e.make||'—'}</div>
+                        <div>📋 <strong>Model:</strong> ${e.model||'—'}</div>
+                        <div>🔢 <strong>Serial:</strong> ${e.serial||'—'}</div>
+                    </div>
+                    ${badges.length?`<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;">${badges.map(t=>`<span class="status-badge status-available" style="font-size:11px;">🏛 ${t}</span>`).join('')}</div>`:''}
+                    ${e.comments?`<div style="margin-top:6px;font-size:13px;color:#666;">📝 ${e.comments}</div>`:''}
+                </div>`;
+            }).join('');
+        }
 
         // ===================== TSCM History Filter Functions =====================
 
@@ -7546,6 +8209,7 @@ service cloud.firestore {
                         ${d.agencyFederal    ? '<span class="status-badge status-available" style="font-size:11px;">🏛 Federal</span>'    : ''}
                         ${d.agencyFdle       ? '<span class="status-badge status-available" style="font-size:11px;">🏛 FDLE</span>'       : ''}
                         ${d.agencyInterstate ? '<span class="status-badge status-available" style="font-size:11px;">🏛 Interstate</span>' : ''}
+                        ${d.agencyBucketTruck ? '<span class="status-badge status-available" style="font-size:11px;">🚛 FDLE Bucket-Truck</span>' : ''}
                     </div>` : ''}
                     ${d.notes ? `<div style="margin-top:6px; font-size:13px; color:#666;">📝 ${d.notes}</div>` : ''}
                 </div>`;
@@ -7815,6 +8479,7 @@ service cloud.firestore {
                         ${d.agencyFederal    ? '<span class="status-badge status-available" style="font-size:11px;">🏛 Federal</span>'    : ''}
                         ${d.agencyFdle       ? '<span class="status-badge status-available" style="font-size:11px;">🏛 FDLE</span>'       : ''}
                         ${d.agencyInterstate ? '<span class="status-badge status-available" style="font-size:11px;">🏛 Interstate</span>' : ''}
+                        ${d.agencyBucketTruck ? '<span class="status-badge status-available" style="font-size:11px;">🚛 FDLE Bucket-Truck</span>' : ''}
                     </div>` : ''}
                     ${d.notes ? `<div style="margin-top:6px; font-size:13px; color:#666;">📝 ${d.notes}</div>` : ''}
                 </div>
