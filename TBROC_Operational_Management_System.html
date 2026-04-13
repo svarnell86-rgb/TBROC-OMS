@@ -2978,7 +2978,7 @@ service cloud.firestore {
         window._sendPasswordResetEmail = sendPasswordResetEmail;
 
         // ===================== Self-Update Version Check =====================
-        const APP_VERSION = '1.2';
+        const APP_VERSION = '1.4';
         window.APP_VERSION = APP_VERSION;
 
         async function checkForUpdates(db) {
@@ -3757,6 +3757,111 @@ service cloud.firestore {
             }
             if (typeof closeEditPoleCamDialog === 'function') closeEditPoleCamDialog();
             alert('Camera updated successfully!');
+        };
+
+
+        // ===================== Court Order Report Generator =====================
+
+        window.generatePRTTReport = async function(id) {
+          try {
+            const e = (window.prttEntries || []).find(x => x.id === id);
+            if (!e) { alert('Record not found.'); return; }
+
+            const fmtDate = v => v ? new Date(v + 'T12:00:00').toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : '_______________';
+            const subjectName = [e.firstName, e.lastName].filter(Boolean).join(' ') || '_______________';
+            const lastName    = e.lastName || subjectName;
+            const agencyName  = e.requestingAgency || '_______________';
+            const startDate   = fmtDate(e.dateStart);
+            const stopDate    = fmtDate(e.dateStop);
+            const orderType   = [e.typeFugitive && 'Fugitive', e.typeInvestigative && 'Investigative'].filter(Boolean).join('/') || '_______________';
+            const reqTypes    = [e.cellMapping && 'Records Analysis', e.prtt && 'Pen Register', e.gpsLocates && 'GPS Locates'].filter(Boolean).join(', ') || '_______________';
+            const carrierMap  = { tmobile: 'T-Mobile', att: 'AT&T', verizon: 'Verizon', dish: 'Dish', facebook: 'Facebook', instagram: 'Instagram', textnow: 'TextNow' };
+            const carrier     = carrierMap[e.carrier] || e.carrier || '_______________';
+            const phone       = e.phone || '_______________';
+            const addlInfo    = e.address || '';
+
+            const arrestedSentence = e.arrested
+                ? `With the assistance of _______________, ${lastName} was taken into custody and transported to _______________.`
+                : `_______________________________________________________________________________________________________________________________.`;
+
+            const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Investigative Report – ${subjectName}</title>
+<style>
+  body {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 12pt;
+    line-height: 1.8;
+    margin: 1in;
+    color: #000;
+  }
+  .header {
+    text-align: center;
+    font-weight: bold;
+    line-height: 1.6;
+    margin-bottom: 8pt;
+  }
+  .title {
+    text-align: center;
+    font-weight: bold;
+    text-decoration: underline;
+    margin-bottom: 24pt;
+  }
+  p {
+    text-align: justify;
+    margin: 0 0 12pt 0;
+  }
+  .details {
+    margin-top: 16pt;
+  }
+  .details p {
+    margin: 0 0 4pt 0;
+  }
+  b { font-weight: bold; }
+  @media print {
+    body { margin: 1in; }
+    .no-print { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="no-print" style="background:#003366;color:white;padding:10px 16px;margin:-1in -1in 24pt -1in;display:flex;align-items:center;justify-content:space-between;">
+  <span style="font-family:Arial;font-size:13px;">📄 Investigative Report — ${subjectName} &nbsp;|&nbsp; Use Ctrl+P to print or save as PDF</span>
+  <button onclick="window.print()" style="background:white;color:#003366;border:none;padding:6px 14px;border-radius:4px;font-weight:bold;cursor:pointer;">🖨 Print / Save PDF</button>
+</div>
+
+<div class="header">
+  FLORIDA DEPARTMENT OF LAW ENFORCEMENT<br>
+  TAMPA BAY REGIONAL OPERATIONS CENTER<br>
+  ELECTRONIC SURVEILLANCE SUPPORT TEAM
+</div>
+
+<div class="title">INVESTIGATIVE REPORT</div>
+
+<p>The purpose of this investigative report (IR) is to document the investigative and analytical assistance provided by the Florida Department of Law Enforcement (FDLE) Tampa Bay Regional Operations Center (TBROC) Electronic Surveillance Support Team (ESST).</p>
+
+<p>On ${startDate}, the <b>${agencyName}</b> requested assistance from the TBROC ESST to locate <b>${subjectName}</b>. <b>${lastName}</b> was wanted for _______________________________________________________________________________.</p>
+
+<p>On ${startDate}, the ESST initiated surveillance under the authority of a signed and sealed court order. On _______________, ESST Agents located <b>${subjectName}</b> at _______________________________________________. ${arrestedSentence}</p>
+
+<br>
+<p>An electronic copy of the surveillance court order was submitted to this investigative report as related item <b>INV-</b>_______________.</p>
+
+</body>
+</html>`;
+
+            const win = window.open('', '_blank');
+            if (!win) { alert('Please allow pop-ups for this page to generate reports.'); return; }
+            win.document.write(html);
+            win.document.close();
+
+          } catch(err) {
+            console.error('Generate Report error:', err);
+            alert('Error generating report: ' + err.message);
+          }
         };
 
         window.saveEditPRTT = async function() {
@@ -6824,6 +6929,7 @@ service cloud.firestore {
                             <div style="font-size:12px; color:#666; margin-top:2px;">Submitted: ${new Date(e.submittedAt).toLocaleString()}</div>
                         </div>
                         <div style="display:flex; gap:6px;">
+                                <button class="btn btn-sm" style="background:#003366;color:white;" onclick="generatePRTTReport('${e.id}')">📄 Generate Report</button>
                                 <button class="btn btn-warning btn-sm no-readonly" onclick="editPRTT('${e.id}')">Edit</button>
                                 <button class="btn btn-danger btn-sm" onclick="deletePRTT('${e.id}')">🗑 Delete</button>
                             </div>
@@ -7093,6 +7199,8 @@ service cloud.firestore {
             document.getElementById('edit-prtt-modal').classList.add('active');
         }
         window.editPRTT = editPRTT;
+
+
 
         function closeEditPRTTDialog() {
             document.getElementById('edit-prtt-modal').classList.remove('active');
