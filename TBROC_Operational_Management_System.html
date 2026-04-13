@@ -2748,7 +2748,7 @@ service cloud.firestore {
         window._sendPasswordResetEmail = sendPasswordResetEmail;
 
         // ===================== Self-Update Version Check =====================
-        const APP_VERSION = '1.1';
+        const APP_VERSION = '1.2';
         window.APP_VERSION = APP_VERSION;
 
         async function checkForUpdates(db) {
@@ -2761,16 +2761,20 @@ service cloud.firestore {
                 }
                 const latest  = versionDoc.data().version;
                 const fileUrl = versionDoc.data().fileUrl || null;
-                console.log('[Update Check] Firestore version:', latest, '| fileUrl:', fileUrl);
+                console.log('[Update Check] Firestore version:', latest, '| App version:', APP_VERSION);
 
                 if (latest && latest !== APP_VERSION) {
                     console.log('[Update Check] New version detected — showing banner.');
                     showUpdateBanner(latest, fileUrl);
                 } else {
                     console.log('[Update Check] App is up to date.');
+                    // Hide banner in case it was shown previously
+                    const banner = document.getElementById('update-banner');
+                    if (banner) banner.style.display = 'none';
                 }
             } catch (err) {
-                console.warn('[Update Check] Failed:', err.message);
+                // May fail if Firestore rules require auth — retry after login
+                console.log('[Update Check] Will retry after login:', err.message);
             }
         }
 
@@ -2840,6 +2844,9 @@ service cloud.firestore {
                 window.db   = getFirestore(app);
                 window.auth = getAuth(app);
                 window.storageMode = 'firebase';
+
+                // Check for updates immediately — runs before login so even old files show the banner
+                checkForUpdates(window.db);
 
                 // Auth state listener — runs whenever sign-in/sign-out happens
                 onAuthStateChanged(window.auth, async (user) => {
@@ -3464,7 +3471,30 @@ service cloud.firestore {
         window.saveEditEquipment = window.saveEditEquipment || async function() {};
         window.saveEditAgency = window.saveEditAgency || async function() {};
         window.saveEditRadio = window.saveEditRadio || async function() {};
-        window.saveEditPoleCam = window.saveEditPoleCam || async function() {};
+        window.saveEditPoleCam = async function() {
+            const id = document.getElementById('edit-polecam-id').value;
+            const updates = {
+                name:   document.getElementById('edit-polecam-name').value.trim(),
+                model:  document.getElementById('edit-polecam-model').value.trim(),
+                serial: document.getElementById('edit-polecam-serial').value.trim(),
+                fdle:   document.getElementById('edit-polecam-fdle').value.trim(),
+                notes:  document.getElementById('edit-polecam-notes').value.trim()
+            };
+            if (!updates.name) { alert('Camera name is required.'); return; }
+            if (window.storageMode === 'firebase' && window.db) {
+                try {
+                    const { updateDoc, doc } = window.firebaseFunctions;
+                    await updateDoc(doc(window.db, 'poleCameras', id), updates);
+                } catch (err) { alert('Error updating camera: ' + err.message); return; }
+            } else {
+                const cam = (window.poleCameras || []).find(c => c.id === id);
+                if (cam) Object.assign(cam, updates);
+                localStorage.setItem('poleCameras', JSON.stringify(window.poleCameras));
+                if (typeof renderPoleCamList === 'function') renderPoleCamList();
+            }
+            if (typeof closeEditPoleCamDialog === 'function') closeEditPoleCamDialog();
+            alert('Camera updated successfully!');
+        };
 
         window.saveEditPRTT = async function() {
             console.log('saveEditPRTT called');
@@ -7276,33 +7306,6 @@ service cloud.firestore {
             document.getElementById('edit-polecam-modal').classList.remove('active');
         }
         window.closeEditPoleCamDialog = closeEditPoleCamDialog;
-
-        window.saveEditPoleCam = async function() {
-            const id = document.getElementById('edit-polecam-id').value;
-            const updates = {
-                name:   document.getElementById('edit-polecam-name').value.trim(),
-                model:  document.getElementById('edit-polecam-model').value.trim(),
-                serial: document.getElementById('edit-polecam-serial').value.trim(),
-                fdle:   document.getElementById('edit-polecam-fdle').value.trim(),
-                notes:  document.getElementById('edit-polecam-notes').value.trim()
-            };
-            if (!updates.name) { alert('Camera name is required.'); return; }
-
-            if (window.storageMode === 'firebase' && window.db) {
-                try {
-                    const { updateDoc, doc } = window.firebaseFunctions;
-                    await updateDoc(doc(window.db, 'poleCameras', id), updates);
-                } catch (err) { alert('Error updating camera: ' + err.message); return; }
-            } else {
-                const cam = (window.poleCameras || []).find(c => c.id === id);
-                if (cam) Object.assign(cam, updates);
-                localStorage.setItem('poleCameras', JSON.stringify(window.poleCameras));
-                renderPoleCamList();
-            }
-            closeEditPoleCamDialog();
-            alert('Camera updated successfully!');
-        };
-
 
         // ===================== TSCM History Filter Functions =====================
 
