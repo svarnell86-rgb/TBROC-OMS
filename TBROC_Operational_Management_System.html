@@ -1108,9 +1108,6 @@ service cloud.firestore {
                                     <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;">
                                         <input type="checkbox" id="polecam-agency-fdle" style="width:16px;height:16px;"> FDLE
                                     </label>
-                                    <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;">
-                                        <input type="checkbox" id="polecam-agency-interstate" style="width:16px;height:16px;"> Interstate
-                                    </label>
                                 </div>
                             </div>
                             <div class="form-group" style="margin-top:8px;">
@@ -1217,7 +1214,6 @@ service cloud.firestore {
                                     <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="gps-agency-state" style="width:16px;height:16px;"> State</label>
                                     <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="gps-agency-federal" style="width:16px;height:16px;"> Federal</label>
                                     <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="gps-agency-fdle" style="width:16px;height:16px;"> FDLE</label>
-                                    <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="gps-agency-interstate" style="width:16px;height:16px;"> Interstate</label>
                                 </div>
                             </div>
                             <div class="grid-2">
@@ -2027,7 +2023,6 @@ service cloud.firestore {
                                 <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="ve-agency-state" style="width:16px;height:16px;"> State</label>
                                 <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="ve-agency-federal" style="width:16px;height:16px;"> Federal</label>
                                 <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="ve-agency-fdle" style="width:16px;height:16px;"> FDLE</label>
-                                <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="ve-agency-interstate" style="width:16px;height:16px;"> Interstate</label>
                             </div>
                         </div>
                         <div class="grid-2" style="margin-top:12px;">
@@ -2073,7 +2068,6 @@ service cloud.firestore {
                                 <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="cel-agency-state" style="width:16px;height:16px;"> State</label>
                                 <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="cel-agency-federal" style="width:16px;height:16px;"> Federal</label>
                                 <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="cel-agency-fdle" style="width:16px;height:16px;"> FDLE</label>
-                                <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="cel-agency-interstate" style="width:16px;height:16px;"> Interstate</label>
                             </div>
                         </div>
                         <div class="grid-2" style="margin-top:12px;">
@@ -2333,7 +2327,6 @@ service cloud.firestore {
                             <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="tscm-agency-state" style="width:16px;height:16px;"> State</label>
                             <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="tscm-agency-federal" style="width:16px;height:16px;"> Federal</label>
                             <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="tscm-agency-fdle" style="width:16px;height:16px;"> FDLE</label>
-                            <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="tscm-agency-interstate" style="width:16px;height:16px;"> Interstate</label>
                         </div>
                     </div>
                     <div class="grid-2" style="margin-top:12px;">
@@ -2383,7 +2376,6 @@ service cloud.firestore {
                             <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="uas-agency-state" style="width:16px;height:16px;"> State</label>
                             <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="uas-agency-federal" style="width:16px;height:16px;"> Federal</label>
                             <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="uas-agency-fdle" style="width:16px;height:16px;"> FDLE</label>
-                            <label style="display:flex; align-items:center; gap:8px; font-size:15px; cursor:pointer;"><input type="checkbox" id="uas-agency-interstate" style="width:16px;height:16px;"> Interstate</label>
                         </div>
                     </div>
                     <div class="grid-2" style="margin-top:12px;">
@@ -2978,7 +2970,7 @@ service cloud.firestore {
         window._sendPasswordResetEmail = sendPasswordResetEmail;
 
         // ===================== Self-Update Version Check =====================
-        const APP_VERSION = '1.4';
+        const APP_VERSION = '1.5';
         window.APP_VERSION = APP_VERSION;
 
         async function checkForUpdates(db) {
