@@ -1661,6 +1661,12 @@ service cloud.firestore {
                             <input type="time" id="training-time-end">
                         </div>
                     </div>
+                    <div class="form-group">
+                        <label>Assigned To</label>
+                        <select id="training-assignee">
+                            <option value="">Select person...</option>
+                        </select>
+                    </div>
                     <div style="display:flex; gap:10px; margin-top:10px;">
                         <button class="btn btn-success no-readonly" onclick="submitTraining()">✔ Submit</button>
                         <button class="btn btn-warning" onclick="clearTrainingForm()">Clear Form</button>
@@ -3246,7 +3252,7 @@ service cloud.firestore {
         window._sendPasswordResetEmail = sendPasswordResetEmail;
 
         // ===================== Self-Update Version Check =====================
-        const APP_VERSION = '1.6';
+        const APP_VERSION = '1.7';
         window.APP_VERSION = APP_VERSION;
 
         async function checkForUpdates(db) {
@@ -4608,7 +4614,7 @@ service cloud.firestore {
             if (tabName === 'history') { updateHistoryList(); applyPRTTFilters(); applyCUASFilters(); }
             if (tabName === 'esst') { switchESSTSubTab('courtorders'); populatePRTTAgencyDropdown(); }
             if (tabName === 'techops') { switchTechOpsSubTab('maintenance'); }
-            if (tabName === 'training') { renderTrainingList(); }
+            if (tabName === 'training') { renderTrainingList(); populateTrainingAssigneeDropdown(); }
         }
 
         function switchESSTSubTab(subTab) {
@@ -4926,6 +4932,25 @@ service cloud.firestore {
 
         window.trainingRecords = window.trainingRecords || [];
 
+        function populateTrainingAssigneeDropdown() {
+            const sel = document.getElementById('training-assignee');
+            if (!sel) return;
+            const prev = sel.value;
+            sel.innerHTML = '<option value="">Select person...</option>';
+            (window.users || [])
+                .filter(u => u.type !== 'agency')
+                .sort((a,b) => {
+                    const nameA = (a.lastName || a.name || '').toLowerCase();
+                    const nameB = (b.lastName || b.name || '').toLowerCase();
+                    return nameA.localeCompare(nameB);
+                })
+                .forEach(u => {
+                    const name = u.firstName && u.lastName ? `${u.lastName}, ${u.firstName}` : (u.name || '');
+                    if (name) sel.innerHTML += `<option value="${name}">${name}</option>`;
+                });
+            sel.value = prev;
+        }
+
         window.submitTraining = async function() {
             const name      = document.getElementById('training-name').value.trim();
             const dateStart = document.getElementById('training-date-start').value;
@@ -4933,6 +4958,7 @@ service cloud.firestore {
 
             const record = {
                 name,
+                assignee:   document.getElementById('training-assignee').value,
                 location:   document.getElementById('training-location').value.trim(),
                 dateStart,
                 dateEnd:    document.getElementById('training-date-end').value,
@@ -4957,7 +4983,7 @@ service cloud.firestore {
 
         window.clearTrainingForm = function() {
             ['training-name','training-location','training-date-start','training-date-end',
-             'training-time-start','training-time-end']
+             'training-time-start','training-time-end','training-assignee']
                 .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
         };
 
@@ -4997,6 +5023,7 @@ service cloud.firestore {
                     <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
                         <div>
                             <strong style="font-size:17px;">🎓 ${r.name}</strong>
+                            ${r.assignee ? `<div style="font-size:13px;color:#003366;margin-top:3px;font-weight:600;">👤 ${r.assignee}</div>` : ''}
                             ${r.location ? `<div style="font-size:13px;color:#555;margin-top:3px;">📍 ${r.location}</div>` : ''}
                         </div>
                         <button class="btn btn-danger btn-sm no-readonly" onclick="deleteTrainingRecord('${r.id}')">🗑 Delete</button>
