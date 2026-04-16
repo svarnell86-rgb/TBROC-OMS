@@ -2,8 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TBROC OMS">
+    <meta name="theme-color" content="#003366">
     <title>TBROC Operational Management System</title>
+    <link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;TBROC OMS&quot;,&quot;short_name&quot;:&quot;TBROC&quot;,&quot;start_url&quot;:&quot;.&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%23003366&quot;,&quot;theme_color&quot;:&quot;%23003366&quot;}">
     <style>
         * {
             margin: 0;
@@ -313,6 +319,240 @@
             }
         }
 
+        /* ===================== MOBILE RESPONSIVE ===================== */
+
+        /* Hamburger button */
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            min-width: 44px;
+            min-height: 44px;
+            align-items: center;
+            justify-content: center;
+        }
+        .hamburger span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: #003366;
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+        .hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+        .hamburger.open span:nth-child(2) { opacity: 0; }
+        .hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+
+        /* Mobile nav overlay */
+        .mobile-nav-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 998;
+        }
+        .mobile-nav-overlay.active { display: block; }
+
+        /* Mobile nav drawer */
+        .mobile-nav-drawer {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            width: 280px;
+            background: #003366;
+            z-index: 999;
+            padding: 60px 0 20px;
+            overflow-y: auto;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+        .mobile-nav-drawer.active {
+            display: block;
+            transform: translateX(0);
+        }
+        .mobile-nav-drawer .nav-title {
+            color: rgba(255,255,255,0.6);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0 20px 10px;
+        }
+        .mobile-nav-drawer button {
+            display: block;
+            width: 100%;
+            padding: 16px 24px;
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.85);
+            font-size: 15px;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .mobile-nav-drawer button:hover,
+        .mobile-nav-drawer button.active {
+            background: rgba(255,255,255,0.12);
+            color: white;
+            border-left-color: white;
+        }
+        .mobile-nav-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(255,255,255,0.15) !important;
+            border-radius: 50% !important;
+            width: 36px !important;
+            height: 36px !important;
+            padding: 0 !important;
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px !important;
+            border-left: none !important;
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 0; }
+
+            .container { max-width: 100%; }
+
+            /* Header */
+            .header {
+                border-radius: 0;
+                padding: 12px 16px;
+                margin-bottom: 0;
+                position: sticky;
+                top: 0;
+                z-index: 100;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            }
+
+            /* Hide desktop title/logo row on mobile */
+            .header > div:first-child { display: none; }
+
+            /* Mobile top bar */
+            .mobile-topbar {
+                display: flex !important;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+            }
+            .mobile-topbar-title {
+                font-size: 14px;
+                font-weight: 700;
+                color: #003366;
+                line-height: 1.2;
+            }
+            .mobile-topbar-sub {
+                font-size: 11px;
+                color: #666;
+            }
+            .mobile-topbar-right {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            /* Hide desktop status bar and tab nav */
+            .header > div:nth-child(2) { display: none; }
+            .tab-navigation { display: none; }
+
+            /* Show hamburger */
+            .hamburger { display: flex; }
+
+            /* Content area */
+            .content-area {
+                border-radius: 0;
+                padding: 16px;
+                min-height: calc(100vh - 70px);
+            }
+
+            /* Grid */
+            .grid-2 { grid-template-columns: 1fr; gap: 10px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+
+            /* Cards */
+            .card { padding: 14px; }
+            .card h3 { font-size: 15px; }
+
+            /* Buttons - bigger tap targets */
+            .btn { min-height: 44px; padding: 10px 18px; font-size: 14px; }
+            .btn-sm { min-height: 36px; padding: 6px 12px; font-size: 12px; }
+
+            /* Forms */
+            .form-group input,
+            .form-group select,
+            .form-group textarea { font-size: 16px; padding: 12px; } /* 16px prevents iOS zoom */
+
+            /* Tables - horizontal scroll */
+            .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            table { min-width: 500px; font-size: 12px; }
+            th, td { padding: 8px 10px; white-space: nowrap; }
+
+            /* Sub-tabs - horizontal scroll */
+            .inv-subtab-nav, .esst-subtab-nav, .techops-subtab-nav {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                white-space: nowrap;
+                display: block !important;
+                padding-bottom: 4px;
+            }
+            .inv-subtab-nav button,
+            .esst-subtab-nav button,
+            .techops-subtab-nav button {
+                white-space: nowrap;
+                display: inline-block;
+            }
+
+            /* Stat cards */
+            .stat-card { padding: 14px; }
+            .stat-card .stat-value { font-size: 26px; }
+
+            /* History items */
+            .history-item { padding: 12px; }
+
+            /* Modals */
+            .modal-content {
+                padding: 20px 16px;
+                width: 95%;
+                max-height: 85vh;
+                margin: 0;
+                border-radius: 16px 16px 0 0;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+            }
+
+            /* Flex button rows - stack on very small screens */
+            div[style*="display:flex"][style*="gap:10px"] {
+                flex-wrap: wrap;
+            }
+
+            /* Section headings */
+            h2 { font-size: 18px; margin-bottom: 12px; }
+            h3 { font-size: 15px; }
+
+            /* Update banner */
+            #update-banner { flex-wrap: wrap; font-size: 13px; padding: 10px 14px; }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .btn { font-size: 13px; padding: 10px 14px; }
+        }
+
+        /* Mobile topbar - hidden on desktop */
+        .mobile-topbar { display: none; }
+
         .empty-state {
             text-align: center;
             padding: 40px;
@@ -588,6 +828,20 @@
 
     <div class="container" id="main-app" style="display:none;">
         <div class="header">
+            <!-- Mobile top bar (hidden on desktop) -->
+            <div class="mobile-topbar">
+                <div>
+                    <div class="mobile-topbar-title">TBROC OMS</div>
+                    <div class="mobile-topbar-sub">FL Dept. of Law Enforcement</div>
+                </div>
+                <div class="mobile-topbar-right">
+                    <span id="role-badge-mobile"></span>
+                    <button class="hamburger" id="hamburger-btn" onclick="toggleMobileNav()" aria-label="Menu">
+                        <span></span><span></span><span></span>
+                    </button>
+                </div>
+            </div>
+
             <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
                 <img src="fdle-badge.png" alt="FDLE Badge" style="height: 60px; width: auto;">
                 <div>
@@ -615,6 +869,28 @@
                 <button class="tab-btn" onclick="switchTab('training')">Training</button>
                 <button class="tab-btn" onclick="switchTab('history')">History</button>
             </div>
+        </div>
+
+        <!-- Mobile nav overlay -->
+        <div class="mobile-nav-overlay" id="mobile-nav-overlay" onclick="closeMobileNav()"></div>
+
+        <!-- Mobile nav drawer -->
+        <div class="mobile-nav-drawer" id="mobile-nav-drawer">
+            <button class="mobile-nav-close" onclick="closeMobileNav()">✕</button>
+            <div class="nav-title">Navigation</div>
+            <button onclick="switchTab('setup');closeMobileNav()">⚙️ Setup</button>
+            <button onclick="switchTab('dashboard');closeMobileNav()">📊 Dashboard</button>
+            <button onclick="switchTab('users');closeMobileNav()">👥 Assignees</button>
+            <button onclick="switchTab('inventory');closeMobileNav()">📦 Assets</button>
+            <button onclick="switchTab('esst');closeMobileNav()">📡 ESST Operations</button>
+            <button onclick="switchTab('techops');closeMobileNav()">🔧 Technical Operations</button>
+            <button onclick="switchTab('training');closeMobileNav()">🎓 Training</button>
+            <button onclick="switchTab('history');closeMobileNav()">📋 History</button>
+            <div style="border-top:1px solid rgba(255,255,255,0.15);margin:12px 0;"></div>
+            <div class="nav-title">Account</div>
+            <button onclick="showChangePasswordDialog();closeMobileNav()">🔑 Change Password</button>
+            <button onclick="doLogout()" style="color:#ff9999;">🚪 Sign Out</button>
+            <div style="padding:16px 24px;font-size:12px;color:rgba(255,255,255,0.4);" id="mobile-user-info"></div>
         </div>
 
         <div class="content-area">
@@ -867,7 +1143,7 @@ service cloud.firestore {
                 <h2>Assets</h2>
 
                 <!-- Sub-tab navigation -->
-                <div style="display:flex; gap:8px; margin-bottom:20px; border-bottom:2px solid #e0e0e0; padding-bottom:0;">
+                <div class="esst-subtab-nav" style="display:flex; gap:8px; margin-bottom:20px; border-bottom:2px solid #e0e0e0; padding-bottom:0; overflow-x:auto; flex-wrap:nowrap;">
                     <button id="inv-subtab-btn-list" class="inv-subtab-btn" onclick="switchInvSubTab('list')" style="padding:10px 22px; border:none; border-radius:8px 8px 0 0; cursor:pointer; font-size:14px; font-weight:600; background:#003366; color:white; margin-bottom:-2px; border-bottom:2px solid #003366;">📋 Equipment List</button>
                     <button id="inv-subtab-btn-radios" class="inv-subtab-btn" onclick="switchInvSubTab('radios')" style="padding:10px 22px; border:none; border-radius:8px 8px 0 0; cursor:pointer; font-size:14px; font-weight:600; background:#f0f0f0; color:#333; margin-bottom:-2px; border-bottom:2px solid transparent;">🎙️ Radios</button>
                     <button id="inv-subtab-btn-polecams" class="inv-subtab-btn" onclick="switchInvSubTab('polecams')" style="padding:10px 22px; border:none; border-radius:8px 8px 0 0; cursor:pointer; font-size:14px; font-weight:600; background:#f0f0f0; color:#333; margin-bottom:-2px; border-bottom:2px solid transparent;">📷 Covert/Overt Video</button>
@@ -1282,7 +1558,7 @@ service cloud.firestore {
                 <h2>Assignees</h2>
 
                 <!-- Sub-tab navigation -->
-                <div style="display:flex; gap:8px; margin-bottom:20px; border-bottom:2px solid #e0e0e0; padding-bottom:0;">
+                <div class="techops-subtab-nav" style="display:flex; gap:8px; margin-bottom:20px; border-bottom:2px solid #e0e0e0; padding-bottom:0; overflow-x:auto; flex-wrap:nowrap;">
                     <button id="usr-subtab-btn-individual" class="usr-subtab-btn" onclick="switchUsrSubTab('individual')" style="padding:10px 22px; border:none; border-radius:8px 8px 0 0; cursor:pointer; font-size:14px; font-weight:600; background:#003366; color:white; margin-bottom:-2px; border-bottom:2px solid #003366;">👤 Individual</button>
                     <button id="usr-subtab-btn-agencies" class="usr-subtab-btn" onclick="switchUsrSubTab('agencies')" style="padding:10px 22px; border:none; border-radius:8px 8px 0 0; cursor:pointer; font-size:14px; font-weight:600; background:#f0f0f0; color:#333; margin-bottom:-2px; border-bottom:2px solid transparent;">🏢 Agencies</button>
                 </div>
@@ -2970,7 +3246,7 @@ service cloud.firestore {
         window._sendPasswordResetEmail = sendPasswordResetEmail;
 
         // ===================== Self-Update Version Check =====================
-        const APP_VERSION = '1.5';
+        const APP_VERSION = '1.6';
         window.APP_VERSION = APP_VERSION;
 
         async function checkForUpdates(db) {
@@ -4259,6 +4535,54 @@ service cloud.firestore {
         };
 
         // Tab switching
+        // ===================== Mobile Navigation =====================
+
+        function toggleMobileNav() {
+            const drawer  = document.getElementById('mobile-nav-drawer');
+            const overlay = document.getElementById('mobile-nav-overlay');
+            const hamburger = document.getElementById('hamburger-btn');
+            const isOpen = drawer.classList.contains('active');
+            if (isOpen) {
+                drawer.classList.remove('active');
+                overlay.classList.remove('active');
+                hamburger.classList.remove('open');
+            } else {
+                drawer.classList.add('active');
+                overlay.classList.add('active');
+                hamburger.classList.add('open');
+            }
+        }
+        window.toggleMobileNav = toggleMobileNav;
+
+        function closeMobileNav() {
+            document.getElementById('mobile-nav-drawer').classList.remove('active');
+            document.getElementById('mobile-nav-overlay').classList.remove('active');
+            document.getElementById('hamburger-btn').classList.remove('open');
+        }
+        window.closeMobileNav = closeMobileNav;
+
+        function updateMobileNavHighlight(tabName) {
+            document.querySelectorAll('.mobile-nav-drawer button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(`switchTab('${tabName}')`)) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        function updateMobileUserInfo() {
+            const el = document.getElementById('mobile-user-info');
+            const ud = document.getElementById('user-display');
+            if (el && ud) el.textContent = ud.textContent;
+            // Sync role badge to mobile
+            const rb = document.getElementById('role-badge');
+            const rbm = document.getElementById('role-badge-mobile');
+            if (rb && rbm) rbm.innerHTML = rb.innerHTML;
+        }
+
+        // Run on load and when auth changes
+        setInterval(updateMobileUserInfo, 2000);
+
         function switchTab(tabName, btnEl) {
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
@@ -4273,6 +4597,9 @@ service cloud.firestore {
             const target = btnEl || (typeof event !== 'undefined' && event.target) ||
                 document.querySelector(`.tab-btn[onclick="switchTab('${tabName}')"]`);
             if (target) target.classList.add('active');
+
+            // Highlight mobile drawer
+            updateMobileNavHighlight(tabName);
 
             // Refresh the view
             if (tabName === 'dashboard') updateDashboard();
