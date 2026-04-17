@@ -4138,6 +4138,104 @@ service cloud.firestore {
           }
         };
 
+        // Early stubs — real implementations defined later; stubs prevent "not defined" errors on click
+        // These will be overwritten by the real definitions below
+        window.submitUASRequest  = window.submitUASRequest  || async function() { alert('Loading... please try again.'); };
+        window.clearUASForm      = window.clearUASForm      || function() {};
+        window.submitUASMaint    = window.submitUASMaint    || async function() { alert('Loading... please try again.'); };
+        window.clearUASMaintForm = window.clearUASMaintForm || function() {};
+        window.submitVERequest   = window.submitVERequest   || async function() { alert('Loading... please try again.'); };
+        window.clearVEForm       = window.clearVEForm       || function() {};
+        window.submitCelRequest  = window.submitCelRequest  || async function() { alert('Loading... please try again.'); };
+        window.clearCelForm      = window.clearCelForm      || function() {};
+        window.submitTSCMRequest = window.submitTSCMRequest || async function() { alert('Loading... please try again.'); };
+        window.clearTSCMForm     = window.clearTSCMForm     || function() {};
+        window.submitTraining    = window.submitTraining    || async function() { alert('Loading... please try again.'); };
+        window.clearTrainingForm = window.clearTrainingForm || function() {};
+
+        window.submitUASRequest = async function() {
+            const agency    = document.getElementById('uas-requesting-agency').value;
+            const dateStart = document.getElementById('uas-date-start').value;
+            if (!agency || !dateStart) { alert('Please select a requesting agency and start date.'); return; }
+
+            const entry = {
+                requestingAgency: agency,
+                agencyLocal:      document.getElementById('uas-agency-local').checked,
+                agencyState:      document.getElementById('uas-agency-state').checked,
+                agencyFederal:    document.getElementById('uas-agency-federal').checked,
+                agencyFdle:       document.getElementById('uas-agency-fdle').checked,
+                agencyInterstate: document.getElementById('uas-agency-interstate').checked,
+                dateStart,
+                dateEnd:  document.getElementById('uas-date-end').value,
+                location: document.getElementById('uas-location').value.trim(),
+                uasType:  document.getElementById('uas-type').value.trim(),
+                make:     document.getElementById('uas-make').value.trim(),
+                model:    document.getElementById('uas-model').value.trim(),
+                serial:   document.getElementById('uas-serial').value.trim(),
+                comments: document.getElementById('uas-comments').value.trim(),
+                submittedAt: new Date().toISOString()
+            };
+
+            if (window.storageMode === 'firebase' && window.db) {
+                try {
+                    const { addDoc, collection } = window.firebaseFunctions;
+                    await addDoc(collection(window.db, 'uasEntries'), entry);
+                } catch (err) { alert('Error saving: ' + err.message); return; }
+            } else {
+                entry.id = Date.now().toString();
+                window.uasEntries.unshift(entry);
+                renderUASList();
+            }
+            clearUASForm();
+            alert('UAS request submitted successfully!');
+        };
+
+        window.clearUASForm = function() {
+            ['uas-requesting-agency','uas-date-start','uas-date-end','uas-location',
+             'uas-type','uas-make','uas-model','uas-serial','uas-comments']
+                .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+            ['uas-agency-local','uas-agency-state','uas-agency-federal','uas-agency-fdle','uas-agency-interstate']
+                .forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; });
+        };
+
+        window.submitUASMaint = async function() {
+            const name = document.getElementById('uas-maint-name').value.trim();
+            const date = document.getElementById('uas-maint-date').value;
+            const type = document.getElementById('uas-maint-type').value;
+            if (!name || !date || !type) { alert('UAS Name, Date, and Maintenance Type are required.'); return; }
+
+            const record = {
+                name,
+                serial:      document.getElementById('uas-maint-serial').value.trim(),
+                make:        document.getElementById('uas-maint-make').value.trim(),
+                model:       document.getElementById('uas-maint-model').value.trim(),
+                maintType:   type,
+                date,
+                performedBy: document.getElementById('uas-maint-performed-by').value.trim(),
+                description: document.getElementById('uas-maint-description').value.trim(),
+                submittedAt: new Date().toISOString()
+            };
+
+            if (window.storageMode === 'firebase' && window.db) {
+                try {
+                    const { addDoc, collection } = window.firebaseFunctions;
+                    await addDoc(collection(window.db, 'uasMaintRecords'), record);
+                } catch (err) { alert('Error saving: ' + err.message); return; }
+            } else {
+                record.id = Date.now().toString();
+                window.uasMaintRecords.unshift(record);
+                renderUASMaintList();
+            }
+            clearUASMaintForm();
+            alert('UAS maintenance record logged successfully!');
+        };
+
+        window.clearUASMaintForm = function() {
+            ['uas-maint-name','uas-maint-serial','uas-maint-make','uas-maint-model',
+             'uas-maint-type','uas-maint-date','uas-maint-performed-by','uas-maint-description']
+                .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+        };
+
         window.saveEditPRTT = async function() {
             console.log('saveEditPRTT called');
             try {
@@ -5055,50 +5153,9 @@ service cloud.firestore {
         }
         window.populateUASAgencyDropdown = populateUASAgencyDropdown;
 
-        window.submitUASRequest = async function() {
-            const agency    = document.getElementById('uas-requesting-agency').value;
-            const dateStart = document.getElementById('uas-date-start').value;
-            if (!agency || !dateStart) { alert('Please select a requesting agency and start date.'); return; }
 
-            const entry = {
-                requestingAgency: agency,
-                agencyLocal:      document.getElementById('uas-agency-local').checked,
-                agencyState:      document.getElementById('uas-agency-state').checked,
-                agencyFederal:    document.getElementById('uas-agency-federal').checked,
-                agencyFdle:       document.getElementById('uas-agency-fdle').checked,
-                agencyInterstate: document.getElementById('uas-agency-interstate').checked,
-                dateStart,
-                dateEnd:  document.getElementById('uas-date-end').value,
-                location: document.getElementById('uas-location').value.trim(),
-                uasType:  document.getElementById('uas-type').value.trim(),
-                make:     document.getElementById('uas-make').value.trim(),
-                model:    document.getElementById('uas-model').value.trim(),
-                serial:   document.getElementById('uas-serial').value.trim(),
-                comments: document.getElementById('uas-comments').value.trim(),
-                submittedAt: new Date().toISOString()
-            };
 
-            if (window.storageMode === 'firebase' && window.db) {
-                try {
-                    const { addDoc, collection } = window.firebaseFunctions;
-                    await addDoc(collection(window.db, 'uasEntries'), entry);
-                } catch (err) { alert('Error saving: ' + err.message); return; }
-            } else {
-                entry.id = Date.now().toString();
-                window.uasEntries.unshift(entry);
-                renderUASList();
-            }
-            clearUASForm();
-            alert('UAS request submitted successfully!');
-        };
 
-        window.clearUASForm = function() {
-            ['uas-requesting-agency','uas-date-start','uas-date-end','uas-location',
-             'uas-type','uas-make','uas-model','uas-serial','uas-comments']
-                .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
-            ['uas-agency-local','uas-agency-state','uas-agency-federal','uas-agency-fdle','uas-agency-interstate']
-                .forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; });
-        };
 
         window.deleteUASEntry = async function(id) {
             if (!confirm('Delete this UAS request?')) return;
@@ -5148,43 +5205,9 @@ service cloud.firestore {
 
         window.uasMaintRecords = window.uasMaintRecords || [];
 
-        window.submitUASMaint = async function() {
-            const name = document.getElementById('uas-maint-name').value.trim();
-            const date = document.getElementById('uas-maint-date').value;
-            const type = document.getElementById('uas-maint-type').value;
-            if (!name || !date || !type) { alert('UAS Name, Date, and Maintenance Type are required.'); return; }
 
-            const record = {
-                name,
-                serial:      document.getElementById('uas-maint-serial').value.trim(),
-                make:        document.getElementById('uas-maint-make').value.trim(),
-                model:       document.getElementById('uas-maint-model').value.trim(),
-                maintType:   type,
-                date,
-                performedBy: document.getElementById('uas-maint-performed-by').value.trim(),
-                description: document.getElementById('uas-maint-description').value.trim(),
-                submittedAt: new Date().toISOString()
-            };
 
-            if (window.storageMode === 'firebase' && window.db) {
-                try {
-                    const { addDoc, collection } = window.firebaseFunctions;
-                    await addDoc(collection(window.db, 'uasMaintRecords'), record);
-                } catch (err) { alert('Error saving: ' + err.message); return; }
-            } else {
-                record.id = Date.now().toString();
-                window.uasMaintRecords.unshift(record);
-                renderUASMaintList();
-            }
-            clearUASMaintForm();
-            alert('UAS maintenance record logged successfully!');
-        };
 
-        window.clearUASMaintForm = function() {
-            ['uas-maint-name','uas-maint-serial','uas-maint-make','uas-maint-model',
-             'uas-maint-type','uas-maint-date','uas-maint-performed-by','uas-maint-description']
-                .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
-        };
 
         window.deleteUASMaint = async function(id) {
             if (!confirm('Delete this UAS maintenance record?')) return;
