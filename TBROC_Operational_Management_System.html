@@ -3252,7 +3252,7 @@ service cloud.firestore {
         window._sendPasswordResetEmail = sendPasswordResetEmail;
 
         // ===================== Self-Update Version Check =====================
-        const APP_VERSION = '2.2';
+        const APP_VERSION = '2.3';
         window.APP_VERSION = APP_VERSION;
 
         async function checkForUpdates(db) {
@@ -3298,10 +3298,20 @@ service cloud.firestore {
                 btn.textContent = '⏳ Downloading...';
                 btn.disabled = true;
 
-                // Fetch directly with no-cache to always get the latest version
-                const response = await fetch(fileUrl, { cache: 'no-store' });
+                // Add timestamp to guarantee GitHub CDN never serves cached version
+                const cacheBust = fileUrl.includes('?') 
+                    ? fileUrl + '&_t=' + Date.now()
+                    : fileUrl + '?_t=' + Date.now();
+
+                const response = await fetch(cacheBust, { cache: 'no-store' });
                     if (!response.ok) throw new Error('HTTP ' + response.status);
                     const html = await response.text();
+
+                    // Verify the downloaded file actually contains the new version
+                    if (!html.includes(`APP_VERSION = '${newVersion}'`)) {
+                        throw new Error(`Downloaded file is still the old version. GitHub CDN may be caching — please try again in a few minutes.`);
+                    }
+
                     const blob = new Blob([html], { type: 'text/html' });
                     const a    = document.createElement('a');
                     a.href     = URL.createObjectURL(blob);
