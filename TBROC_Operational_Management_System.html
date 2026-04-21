@@ -3999,10 +3999,8 @@ service cloud.firestore {
                 errorEl.innerHTML = '<span style="color:#856404;">No Firebase configured. <a href="#" onclick="document.getElementById(\'auth-overlay\').classList.add(\'hidden\'); document.getElementById(\'main-app\').style.display=\'block\'; window.currentUserRole=\'admin\'; window.storageMode=\'local\'; loadLocalData(); applyRoleUI(); return false;" style="color:#003366; font-weight:600;">Use Local Storage Mode</a></span>';
             }
         }
-    </script>
 
-    <script>
-        // ===== EDIT SAVE FUNCTIONS — defined first so they're always available =====
+        // ===== EDIT SAVE FUNCTIONS =====
 
         window.saveEditPoleCam = async function() {
             const id = document.getElementById('edit-polecam-id').value;
@@ -4255,7 +4253,23 @@ service cloud.firestore {
         };
 
         // Edit Equipment
-        function editEquipment
+        function editEquipment(id) {
+            const item = (window.equipment || []).find(e => e.id === id);
+            if (!item) return;
+            document.getElementById('edit-equipment-id').value          = item.id;
+            document.getElementById('edit-equipment-name').value        = item.name || '';
+            document.getElementById('edit-equipment-category').value    = item.category || '';
+            document.getElementById('edit-equipment-serial').value      = item.serial || '';
+            document.getElementById('edit-equipment-location').value    = item.location || '';
+            document.getElementById('edit-equipment-description').value = item.description || '';
+            document.getElementById('edit-equipment-modal').classList.add('active');
+        }
+        window.editEquipment = editEquipment;
+
+        function closeEditEquipmentDialog() {
+            document.getElementById('edit-equipment-modal').classList.remove('active');
+        }
+        window.closeEditEquipmentDialog = closeEditEquipmentDialog;
 
         window.saveEditAgency = async function() {
             const id   = document.getElementById('edit-agency-id').value;
@@ -4280,6 +4294,17 @@ service cloud.firestore {
 
         // ===== Edit Radio =====
         function editRadio(id) {
+            const radio = (window.radios || []).find(r => r.id === id);
+            if (!radio) return;
+            document.getElementById('edit-radio-id').value    = radio.id;
+            document.getElementById('edit-radio-name').value  = radio.name   || '';
+            document.getElementById('edit-radio-serial').value= radio.serial || '';
+            document.getElementById('edit-radio-model').value = radio.model  || '';
+            document.getElementById('edit-radio-fdle').value  = radio.fdle   || '';
+            document.getElementById('edit-radio-notes').value = radio.notes  || '';
+            document.getElementById('edit-radio-modal').classList.add('active');
+        }
+        window.editRadio = editRadio;
 
         function closeEditRadioDialog() {
             document.getElementById('edit-radio-modal').classList.remove('active');
@@ -6991,26 +7016,7 @@ service cloud.firestore {
         }
 
         // Edit User Form Submit
-(id) {
-            const item = window.equipment.find(e => e.id === id);
-            if (!item) return;
-            
-            document.getElementById('edit-equipment-id').value = item.id;
-            document.getElementById('edit-equipment-name').value = item.name;
-            document.getElementById('edit-equipment-category').value = item.category || '';
-            document.getElementById('edit-equipment-serial').value = item.serial || '';
-            document.getElementById('edit-equipment-location').value = item.location || '';
-            document.getElementById('edit-equipment-description').value = item.description || '';
-            
-            document.getElementById('edit-equipment-modal').classList.add('active');
-        }
 
-        // Close Edit Equipment Dialog
-        function closeEditEquipmentDialog() {
-            document.getElementById('edit-equipment-modal').classList.remove('active');
-        }
-
-        // Edit Equipment Form Submit
         // ===================== Maintenance Functions =====================
 
         window.maintenanceRecords = JSON.parse(localStorage.getItem('maintenanceRecords') || '[]');
@@ -8004,21 +8010,6 @@ service cloud.firestore {
         }
         window.closeEditAgencyDialog = closeEditAgencyDialog;
 
-
-            const radio = (window.radios || []).find(r => r.id === id);
-            if (!radio) return;
-            document.getElementById('edit-radio-id').value    = radio.id;
-            document.getElementById('edit-radio-name').value  = radio.name  || '';
-            document.getElementById('edit-radio-serial').value = radio.serial || '';
-            document.getElementById('edit-radio-model').value = radio.model  || '';
-            document.getElementById('edit-radio-fdle').value  = radio.fdle   || '';
-            document.getElementById('edit-radio-notes').value = radio.notes  || '';
-            document.getElementById('edit-radio-modal').classList.add('active');
-        }
-        window.editRadio = editRadio;
-
-
-
         function renderHistoryRadioList() {
             const searchTerm = (document.getElementById('hist-radio-search').value || '').toLowerCase();
             const div = document.getElementById('hist-radio-list');
@@ -8979,6 +8970,25 @@ service cloud.firestore {
 
         // Init local GPS data
         renderGPSList();
+
+        // ===== Expose all onclick-called functions to global scope =====
+        // (required because this is a module script)
+        window.switchTab           = switchTab;
+        window.switchInvSubTab     = switchInvSubTab;
+        window.switchUsrSubTab     = switchUsrSubTab;
+        window.applyFilters        = applyFilters;
+        window.applyPRTTFilters    = applyPRTTFilters;
+        window.clearAllCachedData  = clearAllCachedData;
+        window.clearFilters        = clearFilters;
+        window.clearPRTTFilters    = clearPRTTFilters;
+        window.clearPRTTForm       = clearPRTTForm;
+        window.closeEditUserDialog = closeEditUserDialog;
+        window.closePrintDialog    = closePrintDialog;
+        window.deletePRTT          = deletePRTT;
+        window.editUser            = editUser;
+        window.printReport         = printReport;
+        window.showPrintDialog     = showPrintDialog;
+        window.submitPRTT          = submitPRTT;
     </script>
 </body>
 </html>
