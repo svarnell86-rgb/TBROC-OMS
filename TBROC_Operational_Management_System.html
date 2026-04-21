@@ -3252,7 +3252,7 @@ service cloud.firestore {
         window._sendPasswordResetEmail = sendPasswordResetEmail;
 
         // ===================== Self-Update Version Check =====================
-        const APP_VERSION = '2.3';
+        const APP_VERSION = '2.4';
         window.APP_VERSION = APP_VERSION;
 
         async function checkForUpdates(db) {
@@ -3298,12 +3298,17 @@ service cloud.firestore {
                 btn.textContent = '⏳ Downloading...';
                 btn.disabled = true;
 
-                // Add timestamp to guarantee GitHub CDN never serves cached version
-                const cacheBust = fileUrl.includes('?') 
-                    ? fileUrl + '&_t=' + Date.now()
-                    : fileUrl + '?_t=' + Date.now();
+                // Use GitHub API to bypass CDN cache — always serves latest version
+                let fetchUrl = fileUrl;
+                const rawMatch = fileUrl.match(/raw\.githubusercontent\.com\/([^/]+\/[^/]+)\/(?:refs\/heads\/)?([^/?]+)\/([^?]+)/);
+                if (rawMatch) {
+                    fetchUrl = `https://api.github.com/repos/${rawMatch[1]}/contents/${rawMatch[3]}`;
+                }
 
-                const response = await fetch(cacheBust, { cache: 'no-store' });
+                const response = await fetch(fetchUrl, {
+                    cache: 'no-store',
+                    headers: rawMatch ? { 'Accept': 'application/vnd.github.v3.raw' } : {}
+                });
                     if (!response.ok) throw new Error('HTTP ' + response.status);
                     const html = await response.text();
 
