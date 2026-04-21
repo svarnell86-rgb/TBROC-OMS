@@ -3252,7 +3252,7 @@ service cloud.firestore {
         window._sendPasswordResetEmail = sendPasswordResetEmail;
 
         // ===================== Self-Update Version Check =====================
-        const APP_VERSION = '2.1';
+        const APP_VERSION = '2.2';
         window.APP_VERSION = APP_VERSION;
 
         async function checkForUpdates(db) {
@@ -3298,15 +3298,8 @@ service cloud.firestore {
                 btn.textContent = '⏳ Downloading...';
                 btn.disabled = true;
 
-                // Convert raw GitHub URL to jsDelivr CDN URL (serves with correct content-type)
-                let downloadUrl = fileUrl;
-                const rawMatch = fileUrl.match(/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/(?:refs\/heads\/)?([^/]+)\/(.+?)(\?.*)?$/);
-                if (rawMatch) {
-                    downloadUrl = `https://cdn.jsdelivr.net/gh/${rawMatch[1]}/${rawMatch[2]}@${rawMatch[3]}/${rawMatch[4]}`;
-                }
-
-                try {
-                    const response = await fetch(downloadUrl);
+                // Fetch directly with no-cache to always get the latest version
+                const response = await fetch(fileUrl, { cache: 'no-store' });
                     if (!response.ok) throw new Error('HTTP ' + response.status);
                     const html = await response.text();
                     const blob = new Blob([html], { type: 'text/html' });
