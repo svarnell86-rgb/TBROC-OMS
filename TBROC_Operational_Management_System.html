@@ -3252,7 +3252,7 @@ service cloud.firestore {
         window._sendPasswordResetEmail = sendPasswordResetEmail;
 
         // ===================== Self-Update Version Check =====================
-        const APP_VERSION = '1.7';
+        const APP_VERSION = '1.8';
         window.APP_VERSION = APP_VERSION;
 
         async function checkForUpdates(db) {
@@ -4004,10 +4004,6 @@ service cloud.firestore {
     <script>
         // ===== EDIT SAVE FUNCTIONS — defined first so they're always available =====
 
-        window.saveEditUser = window.saveEditUser || async function() {};
-        window.saveEditEquipment = window.saveEditEquipment || async function() {};
-        window.saveEditAgency = window.saveEditAgency || async function() {};
-        window.saveEditRadio = window.saveEditRadio || async function() {};
         window.saveEditPoleCam = async function() {
             const id = document.getElementById('edit-polecam-id').value;
             const updates = {
@@ -4140,18 +4136,6 @@ service cloud.firestore {
 
         // Early stubs — real implementations defined later; stubs prevent "not defined" errors on click
         // These will be overwritten by the real definitions below
-        window.submitUASRequest  = window.submitUASRequest  || async function() { alert('Loading... please try again.'); };
-        window.clearUASForm      = window.clearUASForm      || function() {};
-        window.submitUASMaint    = window.submitUASMaint    || async function() { alert('Loading... please try again.'); };
-        window.clearUASMaintForm = window.clearUASMaintForm || function() {};
-        window.submitVERequest   = window.submitVERequest   || async function() { alert('Loading... please try again.'); };
-        window.clearVEForm       = window.clearVEForm       || function() {};
-        window.submitCelRequest  = window.submitCelRequest  || async function() { alert('Loading... please try again.'); };
-        window.clearCelForm      = window.clearCelForm      || function() {};
-        window.submitTSCMRequest = window.submitTSCMRequest || async function() { alert('Loading... please try again.'); };
-        window.clearTSCMForm     = window.clearTSCMForm     || function() {};
-        window.submitTraining    = window.submitTraining    || async function() { alert('Loading... please try again.'); };
-        window.clearTrainingForm = window.clearTrainingForm || function() {};
 
         window.submitUASRequest = async function() {
             const agency    = document.getElementById('uas-requesting-agency').value;
@@ -4235,6 +4219,236 @@ service cloud.firestore {
              'uas-maint-type','uas-maint-date','uas-maint-performed-by','uas-maint-description']
                 .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
         };
+
+        window.saveEditUser = async function() {
+
+            const userId = document.getElementById('edit-user-id').value;
+            const firstName = document.getElementById('edit-user-name').value.trim();
+            const updates = {
+                name:       firstName,
+                email:      document.getElementById('edit-user-email').value,
+                department: document.getElementById('edit-user-department').value,
+                phone:      document.getElementById('edit-user-phone').value,
+                esstMember: document.getElementById('edit-user-esst').checked
+            };
+
+            if (window.storageMode === 'firebase' && window.db) {
+                try {
+                    const { updateDoc, doc } = window.firebaseFunctions;
+                    await updateDoc(doc(window.db, 'users', userId), updates);
+                    closeEditUserDialog();
+                    alert('Individual updated successfully!');
+                } catch (error) {
+                    console.error('Error updating user:', error);
+                    alert('Error updating individual: ' + error.message);
+                }
+            } else {
+                const user = window.users.find(u => u.id === userId);
+                if (user) {
+                    Object.assign(user, updates);
+                    window.saveLocalData();
+                    updateAllViews();
+                    closeEditUserDialog();
+                    alert('Individual updated successfully!');
+                }
+            }
+        };
+
+        // Edit Equipment
+        function editEquipment
+
+        window.saveEditAgency = async function() {
+            const id   = document.getElementById('edit-agency-id').value;
+            const name = document.getElementById('edit-agency-name').value.trim();
+            if (!name) { alert('Agency name is required.'); return; }
+            const updates = { name };
+
+            if (window.storageMode === 'firebase' && window.db) {
+                try {
+                    const { updateDoc, doc } = window.firebaseFunctions;
+                    await updateDoc(doc(window.db, 'users', id), updates);
+                } catch (err) { alert('Error updating agency: ' + err.message); return; }
+            } else {
+                const agency = (window.users || []).find(u => u.id === id);
+                if (agency) Object.assign(agency, updates);
+                window.saveLocalData();
+                updateAllViews();
+            }
+            closeEditAgencyDialog();
+            alert('Agency updated successfully!');
+        };
+
+        // ===== Edit Radio =====
+        function editRadio(id) {
+
+        function closeEditRadioDialog() {
+            document.getElementById('edit-radio-modal').classList.remove('active');
+        }
+        window.closeEditRadioDialog = closeEditRadioDialog;
+
+        window.saveEditRadio = async function() {
+            const id = document.getElementById('edit-radio-id').value;
+            const updates = {
+                name:   document.getElementById('edit-radio-name').value.trim(),
+                serial: document.getElementById('edit-radio-serial').value.trim(),
+                model:  document.getElementById('edit-radio-model').value.trim(),
+                fdle:   document.getElementById('edit-radio-fdle').value.trim(),
+                notes:  document.getElementById('edit-radio-notes').value.trim()
+            };
+            if (!updates.name) { alert('Radio name is required.'); return; }
+
+            if (window.storageMode === 'firebase' && window.db) {
+                try {
+                    const { updateDoc, doc } = window.firebaseFunctions;
+                    await updateDoc(doc(window.db, 'radios', id), updates);
+                } catch (err) { alert('Error updating radio: ' + err.message); return; }
+            } else {
+                const radio = (window.radios || []).find(r => r.id === id);
+                if (radio) Object.assign(radio, updates);
+                localStorage.setItem('radios', JSON.stringify(window.radios));
+                renderRadioList();
+            }
+            closeEditRadioDialog();
+            alert('Radio updated successfully!');
+        };
+
+        window.saveEditEquipment = async function() {
+
+            const equipmentId = document.getElementById('edit-equipment-id').value;
+            const updates = {
+                name:        document.getElementById('edit-equipment-name').value.trim(),
+                category:    document.getElementById('edit-equipment-category').value.trim(),
+                serial:      document.getElementById('edit-equipment-serial').value.trim(),
+                location:    document.getElementById('edit-equipment-location').value.trim(),
+                description: document.getElementById('edit-equipment-description').value.trim()
+            };
+            if (!updates.name) { alert('Equipment name is required.'); return; }
+
+            try {
+                await window.updateEquipment(equipmentId, updates);
+                // For local mode updateEquipment handles everything;
+                // for Firebase the listener refreshes — but we still close the modal here
+                closeEditEquipmentDialog();
+                alert('Equipment updated successfully!');
+            } catch (error) {
+                console.error('Error updating equipment:', error);
+                alert('Error updating equipment: ' + error.message);
+            }
+        };
+
+
+        async function savePoleCamAction() {
+            const camId  = document.getElementById('polecam-assign-id').value;
+            const action = document.getElementById('polecam-action').value;
+            if (!camId) { alert('Please select a camera.'); return; }
+
+            const cam  = (window.poleCameras || []).find(c => c.id === camId);
+            if (!cam) return;
+
+            if (action === 'deploy') {
+                const userId   = document.getElementById('polecam-assign-user').value;
+                const deployDate = document.getElementById('polecam-deploy-date').value || new Date().toISOString().split('T')[0];
+                const location = document.getElementById('polecam-deploy-location').value.trim();
+                const notes    = document.getElementById('polecam-action-notes').value.trim();
+                const agencyTypes = {
+                    agencyLocal:      document.getElementById('polecam-agency-local').checked,
+                    agencyState:      document.getElementById('polecam-agency-state').checked,
+                    agencyFederal:    document.getElementById('polecam-agency-federal').checked,
+                    agencyFdle:       document.getElementById('polecam-agency-fdle').checked,
+                    agencyInterstate: document.getElementById('polecam-agency-interstate').checked,
+                    agencyBucketTruck: document.getElementById('polecam-agency-bucket-truck').checked
+                };
+                if (!userId) { alert('Please select an agency.'); return; }
+                const user = (window.users || []).find(u => u.id === userId);
+
+                const deployment = {
+                    cameraId:   camId,
+                    cameraName: cam.name,
+                    userId,
+                    userName:   user ? user.name : 'Unknown',
+                    deployDate,
+                    retrieveDate: null,
+                    location,
+                    notes,
+                    daysDeployed: null,
+                    loggedAt: new Date().toISOString(),
+                    ...agencyTypes
+                };
+
+                const camUpdates = {
+                    deployed: true,
+                    assignedTo: userId,
+                    assignedToName: user ? user.name : 'Unknown',
+                    deployDate,
+                    deployLocation: location,
+                    ...agencyTypes
+                };
+
+                if (window.storageMode === 'firebase' && window.db) {
+                    try {
+                        const { addDoc, updateDoc, doc, collection } = window.firebaseFunctions;
+                        await addDoc(collection(window.db, 'poleCamDeployments'), deployment);
+                        await updateDoc(doc(window.db, 'poleCameras', camId), camUpdates);
+                    } catch (err) { alert('Error: ' + err.message); return; }
+                } else {
+                    deployment.id = Date.now().toString();
+                    window.poleCamDeployments.unshift(deployment);
+                    Object.assign(cam, camUpdates);
+                    localStorage.setItem('poleCameras', JSON.stringify(window.poleCameras));
+                    localStorage.setItem('poleCamDeployments', JSON.stringify(window.poleCamDeployments));
+                }
+                alert(`${cam.name} deployed to ${user ? user.name : 'Unknown'}`);
+
+            } else {
+                // Retrieve
+                const retrieveDate = document.getElementById('polecam-retrieve-date').value || new Date().toISOString().split('T')[0];
+                const notes = document.getElementById('polecam-action-notes').value.trim();
+                // Find the open deployment for this camera
+                const openDep = (window.poleCamDeployments || []).find(d => d.cameraId === camId && !d.retrieveDate);
+                const days = calcDaysDeployed(openDep ? openDep.deployDate : cam.deployDate, retrieveDate);
+
+                const camUpdates = {
+                    deployed: false,
+                    assignedTo: null,
+                    assignedToName: null,
+                    deployDate: null,
+                    deployLocation: null,
+                    totalDaysDeployed: (cam.totalDaysDeployed || 0) + days
+                };
+
+                if (window.storageMode === 'firebase' && window.db) {
+                    try {
+                        const { updateDoc, doc } = window.firebaseFunctions;
+                        await updateDoc(doc(window.db, 'poleCameras', camId), camUpdates);
+                        if (openDep) {
+                            await updateDoc(doc(window.db, 'poleCamDeployments', openDep.id), {
+                                retrieveDate, daysDeployed: days, notes
+                            });
+                        }
+                    } catch (err) { alert('Error: ' + err.message); return; }
+                } else {
+                    Object.assign(cam, camUpdates);
+                    if (openDep) { openDep.retrieveDate = retrieveDate; openDep.daysDeployed = days; openDep.notes = notes; }
+                    localStorage.setItem('poleCameras', JSON.stringify(window.poleCameras));
+                    localStorage.setItem('poleCamDeployments', JSON.stringify(window.poleCamDeployments));
+                }
+                alert(`${cam.name} retrieved. Days deployed this session: ${days}`);
+            }
+
+            // Clear form
+            document.getElementById('polecam-assign-id').value = '';
+            document.getElementById('polecam-assign-user').value = '';
+            document.getElementById('polecam-deploy-date').value = '';
+            document.getElementById('polecam-retrieve-date').value = '';
+            document.getElementById('polecam-deploy-location').value = '';
+            document.getElementById('polecam-action-notes').value = '';
+            ['polecam-agency-local','polecam-agency-state','polecam-agency-federal',
+             'polecam-agency-fdle','polecam-agency-interstate','polecam-agency-bucket-truck']
+                .forEach(id => document.getElementById(id).checked = false);
+            populatePoleCamDropdowns();
+            renderPoleCamList();
+        }
+        window.savePoleCamAction = savePoleCamAction;
 
         window.saveEditPRTT = async function() {
             console.log('saveEditPRTT called');
@@ -6777,42 +6991,7 @@ service cloud.firestore {
         }
 
         // Edit User Form Submit
-        window.saveEditUser = async function() {
-
-            const userId = document.getElementById('edit-user-id').value;
-            const firstName = document.getElementById('edit-user-name').value.trim();
-            const updates = {
-                name:       firstName,
-                email:      document.getElementById('edit-user-email').value,
-                department: document.getElementById('edit-user-department').value,
-                phone:      document.getElementById('edit-user-phone').value,
-                esstMember: document.getElementById('edit-user-esst').checked
-            };
-
-            if (window.storageMode === 'firebase' && window.db) {
-                try {
-                    const { updateDoc, doc } = window.firebaseFunctions;
-                    await updateDoc(doc(window.db, 'users', userId), updates);
-                    closeEditUserDialog();
-                    alert('Individual updated successfully!');
-                } catch (error) {
-                    console.error('Error updating user:', error);
-                    alert('Error updating individual: ' + error.message);
-                }
-            } else {
-                const user = window.users.find(u => u.id === userId);
-                if (user) {
-                    Object.assign(user, updates);
-                    window.saveLocalData();
-                    updateAllViews();
-                    closeEditUserDialog();
-                    alert('Individual updated successfully!');
-                }
-            }
-        };
-
-        // Edit Equipment
-        function editEquipment(id) {
+(id) {
             const item = window.equipment.find(e => e.id === id);
             if (!item) return;
             
@@ -6832,30 +7011,6 @@ service cloud.firestore {
         }
 
         // Edit Equipment Form Submit
-        window.saveEditEquipment = async function() {
-
-            const equipmentId = document.getElementById('edit-equipment-id').value;
-            const updates = {
-                name:        document.getElementById('edit-equipment-name').value.trim(),
-                category:    document.getElementById('edit-equipment-category').value.trim(),
-                serial:      document.getElementById('edit-equipment-serial').value.trim(),
-                location:    document.getElementById('edit-equipment-location').value.trim(),
-                description: document.getElementById('edit-equipment-description').value.trim()
-            };
-            if (!updates.name) { alert('Equipment name is required.'); return; }
-
-            try {
-                await window.updateEquipment(equipmentId, updates);
-                // For local mode updateEquipment handles everything;
-                // for Firebase the listener refreshes — but we still close the modal here
-                closeEditEquipmentDialog();
-                alert('Equipment updated successfully!');
-            } catch (error) {
-                console.error('Error updating equipment:', error);
-                alert('Error updating equipment: ' + error.message);
-            }
-        };
-
         // ===================== Maintenance Functions =====================
 
         window.maintenanceRecords = JSON.parse(localStorage.getItem('maintenanceRecords') || '[]');
@@ -7616,18 +7771,30 @@ service cloud.firestore {
             const radioSel = document.getElementById('radio-assign-id');
             const prev = radioSel.value;
             radioSel.innerHTML = '<option value="">Select radio...</option>';
-            (window.radios || []).forEach(r => {
-                radioSel.innerHTML += `<option value="${r.id}">${r.name}${r.assignedToName ? ' → ' + r.assignedToName : ' (Available)'}</option>`;
-            });
+            (window.radios || [])
+                .sort((a,b) => (a.name||'').localeCompare(b.name||'', undefined, {numeric:true}))
+                .forEach(r => {
+                    const identifier = r.fdle ? `FDLE# ${r.fdle}` : (r.serial ? `S/N: ${r.serial}` : '');
+                    const label = identifier ? `${r.name} — ${identifier}` : r.name;
+                    const suffix = r.assignedToName ? ` → ${r.assignedToName}` : ' (Available)';
+                    radioSel.innerHTML += `<option value="${r.id}">${label}${suffix}</option>`;
+                });
             radioSel.value = prev;
 
             // User assignment select — individuals only
             const userSel = document.getElementById('radio-assign-user');
             const prevU = userSel.value;
             userSel.innerHTML = '<option value="">— Unassign —</option>';
-            (window.users || []).filter(u => u.type !== 'agency').forEach(u => {
-                userSel.innerHTML += `<option value="${u.id}">${u.name}</option>`;
-            });
+            (window.users || []).filter(u => u.type !== 'agency')
+                .sort((a,b) => {
+                    const na = (a.lastName || a.name || '').toLowerCase();
+                    const nb = (b.lastName || b.name || '').toLowerCase();
+                    return na.localeCompare(nb);
+                })
+                .forEach(u => {
+                    const displayName = (u.firstName && u.lastName) ? `${u.lastName}, ${u.firstName}` : (u.name || u.firstName || u.lastName || 'Unknown');
+                    userSel.innerHTML += `<option value="${u.id}">${displayName}</option>`;
+                });
             userSel.value = prevU;
         }
 
@@ -7674,9 +7841,10 @@ service cloud.firestore {
             if (!radioId) { alert('Please select a radio.'); return; }
 
             const user   = userId ? (window.users || []).find(u => u.id === userId) : null;
+            const displayName = user ? ((user.firstName && user.lastName) ? `${user.lastName}, ${user.firstName}` : (user.name || user.firstName || user.lastName || 'Unknown')) : null;
             const updates = {
                 assignedTo:     userId || null,
-                assignedToName: user ? user.name : null,
+                assignedToName: displayName,
                 assignedDate:   userId ? new Date().toISOString() : null
             };
 
@@ -7697,7 +7865,7 @@ service cloud.firestore {
             renderRadioList();
             document.getElementById('radio-assign-id').value  = '';
             document.getElementById('radio-assign-user').value = '';
-            alert(user ? `Radio assigned to ${user.name}` : 'Radio unassigned successfully');
+            alert(user ? `Radio assigned to ${displayName}` : 'Radio unassigned successfully');
         }
         window.assignRadio = assignRadio;
 
@@ -7836,29 +8004,7 @@ service cloud.firestore {
         }
         window.closeEditAgencyDialog = closeEditAgencyDialog;
 
-        window.saveEditAgency = async function() {
-            const id   = document.getElementById('edit-agency-id').value;
-            const name = document.getElementById('edit-agency-name').value.trim();
-            if (!name) { alert('Agency name is required.'); return; }
-            const updates = { name };
 
-            if (window.storageMode === 'firebase' && window.db) {
-                try {
-                    const { updateDoc, doc } = window.firebaseFunctions;
-                    await updateDoc(doc(window.db, 'users', id), updates);
-                } catch (err) { alert('Error updating agency: ' + err.message); return; }
-            } else {
-                const agency = (window.users || []).find(u => u.id === id);
-                if (agency) Object.assign(agency, updates);
-                window.saveLocalData();
-                updateAllViews();
-            }
-            closeEditAgencyDialog();
-            alert('Agency updated successfully!');
-        };
-
-        // ===== Edit Radio =====
-        function editRadio(id) {
             const radio = (window.radios || []).find(r => r.id === id);
             if (!radio) return;
             document.getElementById('edit-radio-id').value    = radio.id;
@@ -7871,36 +8017,7 @@ service cloud.firestore {
         }
         window.editRadio = editRadio;
 
-        function closeEditRadioDialog() {
-            document.getElementById('edit-radio-modal').classList.remove('active');
-        }
-        window.closeEditRadioDialog = closeEditRadioDialog;
 
-        window.saveEditRadio = async function() {
-            const id = document.getElementById('edit-radio-id').value;
-            const updates = {
-                name:   document.getElementById('edit-radio-name').value.trim(),
-                serial: document.getElementById('edit-radio-serial').value.trim(),
-                model:  document.getElementById('edit-radio-model').value.trim(),
-                fdle:   document.getElementById('edit-radio-fdle').value.trim(),
-                notes:  document.getElementById('edit-radio-notes').value.trim()
-            };
-            if (!updates.name) { alert('Radio name is required.'); return; }
-
-            if (window.storageMode === 'firebase' && window.db) {
-                try {
-                    const { updateDoc, doc } = window.firebaseFunctions;
-                    await updateDoc(doc(window.db, 'radios', id), updates);
-                } catch (err) { alert('Error updating radio: ' + err.message); return; }
-            } else {
-                const radio = (window.radios || []).find(r => r.id === id);
-                if (radio) Object.assign(radio, updates);
-                localStorage.setItem('radios', JSON.stringify(window.radios));
-                renderRadioList();
-            }
-            closeEditRadioDialog();
-            alert('Radio updated successfully!');
-        };
 
         function renderHistoryRadioList() {
             const searchTerm = (document.getElementById('hist-radio-search').value || '').toLowerCase();
@@ -8115,118 +8232,6 @@ service cloud.firestore {
             return ms > 0 ? Math.ceil(ms / (1000 * 60 * 60 * 24)) : 0;
         }
 
-        async function savePoleCamAction() {
-            const camId  = document.getElementById('polecam-assign-id').value;
-            const action = document.getElementById('polecam-action').value;
-            if (!camId) { alert('Please select a camera.'); return; }
-
-            const cam  = (window.poleCameras || []).find(c => c.id === camId);
-            if (!cam) return;
-
-            if (action === 'deploy') {
-                const userId   = document.getElementById('polecam-assign-user').value;
-                const deployDate = document.getElementById('polecam-deploy-date').value || new Date().toISOString().split('T')[0];
-                const location = document.getElementById('polecam-deploy-location').value.trim();
-                const notes    = document.getElementById('polecam-action-notes').value.trim();
-                const agencyTypes = {
-                    agencyLocal:      document.getElementById('polecam-agency-local').checked,
-                    agencyState:      document.getElementById('polecam-agency-state').checked,
-                    agencyFederal:    document.getElementById('polecam-agency-federal').checked,
-                    agencyFdle:       document.getElementById('polecam-agency-fdle').checked,
-                    agencyInterstate: document.getElementById('polecam-agency-interstate').checked,
-                    agencyBucketTruck: document.getElementById('polecam-agency-bucket-truck').checked
-                };
-                if (!userId) { alert('Please select an agency.'); return; }
-                const user = (window.users || []).find(u => u.id === userId);
-
-                const deployment = {
-                    cameraId:   camId,
-                    cameraName: cam.name,
-                    userId,
-                    userName:   user ? user.name : 'Unknown',
-                    deployDate,
-                    retrieveDate: null,
-                    location,
-                    notes,
-                    daysDeployed: null,
-                    loggedAt: new Date().toISOString(),
-                    ...agencyTypes
-                };
-
-                const camUpdates = {
-                    deployed: true,
-                    assignedTo: userId,
-                    assignedToName: user ? user.name : 'Unknown',
-                    deployDate,
-                    deployLocation: location,
-                    ...agencyTypes
-                };
-
-                if (window.storageMode === 'firebase' && window.db) {
-                    try {
-                        const { addDoc, updateDoc, doc, collection } = window.firebaseFunctions;
-                        await addDoc(collection(window.db, 'poleCamDeployments'), deployment);
-                        await updateDoc(doc(window.db, 'poleCameras', camId), camUpdates);
-                    } catch (err) { alert('Error: ' + err.message); return; }
-                } else {
-                    deployment.id = Date.now().toString();
-                    window.poleCamDeployments.unshift(deployment);
-                    Object.assign(cam, camUpdates);
-                    localStorage.setItem('poleCameras', JSON.stringify(window.poleCameras));
-                    localStorage.setItem('poleCamDeployments', JSON.stringify(window.poleCamDeployments));
-                }
-                alert(`${cam.name} deployed to ${user ? user.name : 'Unknown'}`);
-
-            } else {
-                // Retrieve
-                const retrieveDate = document.getElementById('polecam-retrieve-date').value || new Date().toISOString().split('T')[0];
-                const notes = document.getElementById('polecam-action-notes').value.trim();
-                // Find the open deployment for this camera
-                const openDep = (window.poleCamDeployments || []).find(d => d.cameraId === camId && !d.retrieveDate);
-                const days = calcDaysDeployed(openDep ? openDep.deployDate : cam.deployDate, retrieveDate);
-
-                const camUpdates = {
-                    deployed: false,
-                    assignedTo: null,
-                    assignedToName: null,
-                    deployDate: null,
-                    deployLocation: null,
-                    totalDaysDeployed: (cam.totalDaysDeployed || 0) + days
-                };
-
-                if (window.storageMode === 'firebase' && window.db) {
-                    try {
-                        const { updateDoc, doc } = window.firebaseFunctions;
-                        await updateDoc(doc(window.db, 'poleCameras', camId), camUpdates);
-                        if (openDep) {
-                            await updateDoc(doc(window.db, 'poleCamDeployments', openDep.id), {
-                                retrieveDate, daysDeployed: days, notes
-                            });
-                        }
-                    } catch (err) { alert('Error: ' + err.message); return; }
-                } else {
-                    Object.assign(cam, camUpdates);
-                    if (openDep) { openDep.retrieveDate = retrieveDate; openDep.daysDeployed = days; openDep.notes = notes; }
-                    localStorage.setItem('poleCameras', JSON.stringify(window.poleCameras));
-                    localStorage.setItem('poleCamDeployments', JSON.stringify(window.poleCamDeployments));
-                }
-                alert(`${cam.name} retrieved. Days deployed this session: ${days}`);
-            }
-
-            // Clear form
-            document.getElementById('polecam-assign-id').value = '';
-            document.getElementById('polecam-assign-user').value = '';
-            document.getElementById('polecam-deploy-date').value = '';
-            document.getElementById('polecam-retrieve-date').value = '';
-            document.getElementById('polecam-deploy-location').value = '';
-            document.getElementById('polecam-action-notes').value = '';
-            ['polecam-agency-local','polecam-agency-state','polecam-agency-federal',
-             'polecam-agency-fdle','polecam-agency-interstate','polecam-agency-bucket-truck']
-                .forEach(id => document.getElementById(id).checked = false);
-            populatePoleCamDropdowns();
-            renderPoleCamList();
-        }
-        window.savePoleCamAction = savePoleCamAction;
 
         async function deletePoleCam(id) {
             if (!confirm('Delete this camera and all its deployment history?')) return;
@@ -8824,109 +8829,6 @@ service cloud.firestore {
             alert('GPS tracker added successfully!');
         };
 
-        window.saveGPSAction = async function() {
-            const trackerId = document.getElementById('gps-assign-id').value;
-            const action    = document.getElementById('gps-action').value;
-            if (!trackerId) { alert('Please select a tracker.'); return; }
-
-            const tracker = (window.gpsTrackers || []).find(t => t.id === trackerId);
-            if (!tracker) return;
-
-            if (action === 'deploy') {
-                const userId     = document.getElementById('gps-assign-user').value;
-                const deployDate = document.getElementById('gps-deploy-date').value || new Date().toISOString().split('T')[0];
-                const vehicleYear  = document.getElementById('gps-vehicle-year')?.value.trim() || '';
-                const vehicleMake  = document.getElementById('gps-vehicle-make')?.value.trim() || '';
-                const vehicleModel = document.getElementById('gps-vehicle-model')?.value.trim() || '';
-                const vehicleColor = document.getElementById('gps-vehicle-color')?.value.trim() || '';
-                const vehiclePlate = document.getElementById('gps-vehicle-plate')?.value.trim() || '';
-                const caseNumber   = document.getElementById('gps-case-number')?.value.trim() || '';
-                const location     = [vehicleYear, vehicleMake, vehicleModel, vehicleColor, vehiclePlate].filter(Boolean).join(' ');
-                const notes      = document.getElementById('gps-action-notes').value.trim();
-                const agencyTypes = {
-                    agencyLocal:      document.getElementById('gps-agency-local').checked,
-                    agencyState:      document.getElementById('gps-agency-state').checked,
-                    agencyFederal:    document.getElementById('gps-agency-federal').checked,
-                    agencyFdle:       document.getElementById('gps-agency-fdle').checked,
-                    agencyInterstate: document.getElementById('gps-agency-interstate').checked
-                };
-                if (!userId) { alert('Please select an agency.'); return; }
-                const user = (window.users || []).find(u => u.id === userId);
-
-                const deployment = {
-                    trackerId, trackerName: tracker.name,
-                    userId, userName: user ? user.name : 'Unknown',
-                    deployDate, retrieveDate: null, location, notes,
-                    vehicleYear, vehicleMake, vehicleModel, vehicleColor, vehiclePlate, caseNumber,
-                    daysDeployed: null, loggedAt: new Date().toISOString(),
-                    ...agencyTypes
-                };
-                const trackerUpdates = {
-                    deployed: true, assignedTo: userId,
-                    assignedToName: user ? user.name : 'Unknown',
-                    deployDate, deployLocation: location,
-                    vehicleYear, vehicleMake, vehicleModel, vehicleColor, vehiclePlate, caseNumber,
-                    ...agencyTypes
-                };
-
-                if (window.storageMode === 'firebase' && window.db) {
-                    try {
-                        const { addDoc, updateDoc, doc, collection } = window.firebaseFunctions;
-                        await addDoc(collection(window.db, 'gpsDeployments'), deployment);
-                        await updateDoc(doc(window.db, 'gpsTrackers', trackerId), trackerUpdates);
-                    } catch (err) { alert('Error: ' + err.message); return; }
-                } else {
-                    deployment.id = Date.now().toString();
-                    window.gpsDeployments.unshift(deployment);
-                    Object.assign(tracker, trackerUpdates);
-                    localStorage.setItem('gpsDeployments', JSON.stringify(window.gpsDeployments));
-                    localStorage.setItem('gpsTrackers', JSON.stringify(window.gpsTrackers));
-                    renderGPSList();
-                }
-            } else {
-                // Retrieve
-                const retrieveDate = document.getElementById('gps-retrieve-date').value || new Date().toISOString().split('T')[0];
-                const notes        = document.getElementById('gps-action-notes').value.trim();
-                const dep = [...(window.gpsDeployments || [])].reverse().find(d => d.trackerId === trackerId && !d.retrieveDate);
-                const days = dep ? calcDaysDeployed(dep.deployDate, retrieveDate) : 0;
-
-                const depUpdates = { retrieveDate, notes: notes || dep?.notes || '', daysDeployed: days };
-                const trackerUpdates = {
-                    deployed: false, assignedTo: null, assignedToName: null,
-                    deployDate: null, deployLocation: null,
-                    totalDaysDeployed: (tracker.totalDaysDeployed || 0) + days,
-                    agencyLocal:null,agencyState:null,agencyFederal:null,agencyFdle:null,agencyInterstate:null
-                };
-
-                if (window.storageMode === 'firebase' && window.db) {
-                    try {
-                        const { updateDoc, doc } = window.firebaseFunctions;
-                        if (dep) await updateDoc(doc(window.db, 'gpsDeployments', dep.id), depUpdates);
-                        await updateDoc(doc(window.db, 'gpsTrackers', trackerId), trackerUpdates);
-                    } catch (err) { alert('Error: ' + err.message); return; }
-                } else {
-                    if (dep) Object.assign(dep, depUpdates);
-                    Object.assign(tracker, trackerUpdates);
-                    localStorage.setItem('gpsDeployments', JSON.stringify(window.gpsDeployments));
-                    localStorage.setItem('gpsTrackers', JSON.stringify(window.gpsTrackers));
-                    renderGPSList();
-                }
-            }
-
-            // Clear form
-            document.getElementById('gps-assign-id').value = '';
-            document.getElementById('gps-assign-user').value = '';
-            document.getElementById('gps-deploy-date').value = '';
-            document.getElementById('gps-retrieve-date').value = '';
-            ['gps-vehicle-year','gps-vehicle-make','gps-vehicle-model','gps-vehicle-color','gps-vehicle-plate','gps-case-number']
-                .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
-            document.getElementById('gps-action-notes').value = '';
-            ['gps-agency-local','gps-agency-state','gps-agency-federal','gps-agency-fdle','gps-agency-interstate']
-                .forEach(id => document.getElementById(id).checked = false);
-            populateGPSDropdowns();
-            renderGPSList();
-            alert('GPS tracker updated successfully!');
-        };
 
         window.showGPSHistory = function(trackerId) {
             const section = document.getElementById('gps-history-section');
@@ -8995,13 +8897,6 @@ service cloud.firestore {
             document.getElementById('edit-gps-modal').classList.remove('active');
         };
 
-        window.saveEditGPS = async function() {
-            const id = document.getElementById('edit-gps-id').value;
-            const updates = {
-                name:   document.getElementById('edit-gps-name').value.trim(),
-                serial: document.getElementById('edit-gps-serial').value.trim(),
-                notes:  document.getElementById('edit-gps-notes').value.trim()
-            };
             if (!updates.name) { alert('Tracker name is required.'); return; }
             if (window.storageMode === 'firebase' && window.db) {
                 try {
