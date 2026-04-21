@@ -3252,7 +3252,7 @@ service cloud.firestore {
         window._sendPasswordResetEmail = sendPasswordResetEmail;
 
         // ===================== Self-Update Version Check =====================
-        const APP_VERSION = '2.0';
+        const APP_VERSION = '2.1';
         window.APP_VERSION = APP_VERSION;
 
         async function checkForUpdates(db) {
@@ -5383,7 +5383,11 @@ service cloud.firestore {
             let records = (window.trainingRecords || []).filter(r => {
                 if (!search) return true;
                 return `${r.name} ${r.location}`.toLowerCase().includes(search);
-            }).sort((a,b) => b.submittedAt > a.submittedAt ? 1 : -1);
+            }).sort((a,b) => {
+                const da = a.dateStart || a.submittedAt || '';
+                const db = b.dateStart || b.submittedAt || '';
+                return db > da ? 1 : db < da ? -1 : 0;
+            });
 
             if (!records.length) {
                 div.innerHTML = '<div class="empty-state"><p>No training records found</p></div>';
