@@ -3252,7 +3252,7 @@ service cloud.firestore {
         window._sendPasswordResetEmail = sendPasswordResetEmail;
 
         // ===================== Self-Update Version Check =====================
-        const APP_VERSION = '1.9';
+        const APP_VERSION = '2.0';
         window.APP_VERSION = APP_VERSION;
 
         async function checkForUpdates(db) {
@@ -3297,9 +3297,17 @@ service cloud.firestore {
                 const btn = document.getElementById('update-btn');
                 btn.textContent = '⏳ Downloading...';
                 btn.disabled = true;
+
+                // Convert raw GitHub URL to jsDelivr CDN URL (serves with correct content-type)
+                let downloadUrl = fileUrl;
+                const rawMatch = fileUrl.match(/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/(?:refs\/heads\/)?([^/]+)\/(.+?)(\?.*)?$/);
+                if (rawMatch) {
+                    downloadUrl = `https://cdn.jsdelivr.net/gh/${rawMatch[1]}/${rawMatch[2]}@${rawMatch[3]}/${rawMatch[4]}`;
+                }
+
                 try {
-                    const response = await fetch(fileUrl);
-                    if (!response.ok) throw new Error('Download failed: ' + response.status);
+                    const response = await fetch(downloadUrl);
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
                     const html = await response.text();
                     const blob = new Blob([html], { type: 'text/html' });
                     const a    = document.createElement('a');
@@ -3307,15 +3315,23 @@ service cloud.firestore {
                     a.download = 'TBROC_Operational_Management_System.html';
                     document.body.appendChild(a);
                     a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(a.href);
+                    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 2000);
                     btn.textContent = '✅ Downloaded! Open the new file.';
                     btn.disabled = false;
                 } catch (err) {
+                    // Fallback — open in new tab with instructions
                     btn.textContent = '🔄 Get Update';
                     btn.disabled = false;
-                    alert('Auto-download failed. Opening file manually instead — press Ctrl+S to save.\n\nError: ' + err.message);
-                    window.open(fileUrl, '_blank');
+                    const proceed = confirm(
+                        'Auto-download failed. The file will open in a new tab.\n\n' +
+                        'To save it:\n' +
+                        '1. Press Ctrl+S\n' +
+                        '2. Change "Save as type" to "All Files"\n' +
+                        '3. Make sure filename ends in .html\n' +
+                        '4. Click Save\n\n' +
+                        'Click OK to open the file.'
+                    );
+                    if (proceed) window.open(fileUrl, '_blank');
                 }
             };
         }
