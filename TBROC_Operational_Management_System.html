@@ -794,7 +794,7 @@
         </div>
         <div style="display:flex; gap:10px; align-items:center;">
             <button id="update-btn" style="background:#f0c040; color:#003366; border:none; padding:8px 20px; border-radius:6px; font-weight:700; cursor:pointer; font-size:14px;">
-                🔄 Get Update (then Ctrl+S to save)
+                🔄 Get Update
             </button>
             <button onclick="dismissUpdateBanner()" style="background:transparent; color:white; border:1px solid rgba(255,255,255,0.4); padding:8px 14px; border-radius:6px; cursor:pointer; font-size:13px;">
                 Later
@@ -3252,7 +3252,7 @@ service cloud.firestore {
         window._sendPasswordResetEmail = sendPasswordResetEmail;
 
         // ===================== Self-Update Version Check =====================
-        const APP_VERSION = '1.8';
+        const APP_VERSION = '1.9';
         window.APP_VERSION = APP_VERSION;
 
         async function checkForUpdates(db) {
@@ -3289,16 +3289,34 @@ service cloud.firestore {
             msg.textContent = `Version ${newVersion} is available (you have ${APP_VERSION}).`;
             banner.style.display = 'flex';
 
-            document.getElementById('update-btn').onclick = function() {
+            document.getElementById('update-btn').onclick = async function() {
                 if (!fileUrl) {
                     alert('No download URL configured. Ask your admin to set fileUrl in appConfig/version.');
                     return;
                 }
-                // Open the raw file — browser will display it, user saves with Ctrl+S
-                window.open(fileUrl, '_blank');
-                setTimeout(() => {
-                    document.getElementById('update-btn').textContent = '✅ Press Ctrl+S in the new tab to save!';
-                }, 500);
+                const btn = document.getElementById('update-btn');
+                btn.textContent = '⏳ Downloading...';
+                btn.disabled = true;
+                try {
+                    const response = await fetch(fileUrl);
+                    if (!response.ok) throw new Error('Download failed: ' + response.status);
+                    const html = await response.text();
+                    const blob = new Blob([html], { type: 'text/html' });
+                    const a    = document.createElement('a');
+                    a.href     = URL.createObjectURL(blob);
+                    a.download = 'TBROC_Operational_Management_System.html';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(a.href);
+                    btn.textContent = '✅ Downloaded! Open the new file.';
+                    btn.disabled = false;
+                } catch (err) {
+                    btn.textContent = '🔄 Get Update';
+                    btn.disabled = false;
+                    alert('Auto-download failed. Opening file manually instead — press Ctrl+S to save.\n\nError: ' + err.message);
+                    window.open(fileUrl, '_blank');
+                }
             };
         }
 
