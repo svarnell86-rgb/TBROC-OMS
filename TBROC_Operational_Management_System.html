@@ -8897,22 +8897,6 @@ service cloud.firestore {
             document.getElementById('edit-gps-modal').classList.remove('active');
         };
 
-            if (!updates.name) { alert('Tracker name is required.'); return; }
-            if (window.storageMode === 'firebase' && window.db) {
-                try {
-                    const { updateDoc, doc } = window.firebaseFunctions;
-                    await updateDoc(doc(window.db, 'gpsTrackers', id), updates);
-                } catch (err) { alert('Error: ' + err.message); return; }
-            } else {
-                const t = (window.gpsTrackers || []).find(t => t.id === id);
-                if (t) Object.assign(t, updates);
-                localStorage.setItem('gpsTrackers', JSON.stringify(window.gpsTrackers));
-                renderGPSList();
-            }
-            window.closeEditGPSDialog();
-            alert('GPS tracker updated successfully!');
-        };
-
         function renderGPSList() {
             const searchTerm = (document.getElementById('gps-search')?.value || '').toLowerCase();
             const all = (window.gpsTrackers || []).filter(t =>
