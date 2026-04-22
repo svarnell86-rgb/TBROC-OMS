@@ -3252,7 +3252,7 @@ service cloud.firestore {
         window._sendPasswordResetEmail = sendPasswordResetEmail;
 
         // ===================== Self-Update Version Check =====================
-        const APP_VERSION = '2.4';
+        const APP_VERSION = '2.5';
         window.APP_VERSION = APP_VERSION;
 
         async function checkForUpdates(db) {
@@ -3298,23 +3298,38 @@ service cloud.firestore {
                 btn.textContent = '⏳ Downloading...';
                 btn.disabled = true;
 
-                // Use GitHub API to bypass CDN cache — always serves latest version
-                let fetchUrl = fileUrl;
-                const rawMatch = fileUrl.match(/raw\.githubusercontent\.com\/([^/]+\/[^/]+)\/(?:refs\/heads\/)?([^/?]+)\/([^?]+)/);
-                if (rawMatch) {
-                    fetchUrl = `https://api.github.com/repos/${rawMatch[1]}/contents/${rawMatch[3]}`;
-                }
+                try {
+                    // Try multiple strategies to get the freshest file
+                    const strategies = [
+                        // Strategy 1: GitHub API (bypasses CDN)
+                        async () => {
+                            const rawMatch = fileUrl.match(/raw\.githubusercontent\.com\/([^/]+\/[^/]+)\/(?:refs\/heads\/)?([^/?]+)\/([^?]+)/);
+                            if (!rawMatch) throw new Error('not a raw url');
+                            const apiUrl = `https://api.github.com/repos/${rawMatch[1]}/contents/${rawMatch[3]}?ref=${rawMatch[2]}&_=${Date.now()}`;
+                            const r = await fetch(apiUrl, { headers: { 'Accept': 'application/vnd.github.v3.raw' }, cache: 'no-store' });
+                            if (!r.ok) throw new Error('API ' + r.status);
+                            return r.text();
+                        },
+                        // Strategy 2: Raw URL with timestamp
+                        async () => {
+                            const url = fileUrl.split('?')[0] + '?_t=' + Date.now();
+                            const r = await fetch(url, { cache: 'no-store' });
+                            if (!r.ok) throw new Error('raw ' + r.status);
+                            return r.text();
+                        }
+                    ];
 
-                const response = await fetch(fetchUrl, {
-                    cache: 'no-store',
-                    headers: rawMatch ? { 'Accept': 'application/vnd.github.v3.raw' } : {}
-                });
-                    if (!response.ok) throw new Error('HTTP ' + response.status);
-                    const html = await response.text();
+                    let html = null;
+                    for (const strategy of strategies) {
+                        try {
+                            html = await strategy();
+                            if (html && html.includes(`APP_VERSION = '${newVersion}'`)) break;
+                            html = null; // version mismatch, try next
+                        } catch(e) { /* try next */ }
+                    }
 
-                    // Verify the downloaded file actually contains the new version
-                    if (!html.includes(`APP_VERSION = '${newVersion}'`)) {
-                        throw new Error(`Downloaded file is still the old version. GitHub CDN may be caching — please try again in a few minutes.`);
+                    if (!html) {
+                        throw new Error('GitHub is still serving the old cached version. Please wait 5-10 minutes and try again, or ask your admin to send you the file directly.');
                     }
 
                     const blob = new Blob([html], { type: 'text/html' });
@@ -3327,19 +3342,9 @@ service cloud.firestore {
                     btn.textContent = '✅ Downloaded! Open the new file.';
                     btn.disabled = false;
                 } catch (err) {
-                    // Fallback — open in new tab with instructions
                     btn.textContent = '🔄 Get Update';
                     btn.disabled = false;
-                    const proceed = confirm(
-                        'Auto-download failed. The file will open in a new tab.\n\n' +
-                        'To save it:\n' +
-                        '1. Press Ctrl+S\n' +
-                        '2. Change "Save as type" to "All Files"\n' +
-                        '3. Make sure filename ends in .html\n' +
-                        '4. Click Save\n\n' +
-                        'Click OK to open the file.'
-                    );
-                    if (proceed) window.open(fileUrl, '_blank');
+                    alert('⚠️ ' + err.message + '\n\nAlternatively, your admin can send you the updated file directly.');
                 }
             };
         }
