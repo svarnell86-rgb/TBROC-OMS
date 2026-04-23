@@ -3266,7 +3266,7 @@ service cloud.firestore {
         window._sendPasswordResetEmail = sendPasswordResetEmail;
 
         // ===================== Self-Update Version Check =====================
-        const APP_VERSION = '3.0';
+        const APP_VERSION = '3.1';
         window.APP_VERSION = APP_VERSION;
 
         async function checkForUpdates(db) {
@@ -4207,7 +4207,7 @@ service cloud.firestore {
                 agencyState:      document.getElementById('uas-agency-state').checked,
                 agencyFederal:    document.getElementById('uas-agency-federal').checked,
                 agencyFdle:       document.getElementById('uas-agency-fdle').checked,
-                agencyInterstate: document.getElementById('uas-agency-interstate').checked,
+                
                 dateStart,
                 dateEnd:  document.getElementById('uas-date-end').value,
                 location: document.getElementById('uas-location').value.trim(),
@@ -4237,7 +4237,7 @@ service cloud.firestore {
             ['uas-requesting-agency','uas-date-start','uas-date-end','uas-location',
              'uas-type','uas-make','uas-model','uas-serial','uas-comments']
                 .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
-            ['uas-agency-local','uas-agency-state','uas-agency-federal','uas-agency-fdle','uas-agency-interstate']
+            ['uas-agency-local','uas-agency-state','uas-agency-federal','uas-agency-fdle']
                 .forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; });
         };
 
@@ -4437,12 +4437,11 @@ service cloud.firestore {
                 const location = document.getElementById('polecam-deploy-location').value.trim();
                 const notes    = document.getElementById('polecam-action-notes').value.trim();
                 const agencyTypes = {
-                    agencyLocal:      document.getElementById('polecam-agency-local').checked,
-                    agencyState:      document.getElementById('polecam-agency-state').checked,
-                    agencyFederal:    document.getElementById('polecam-agency-federal').checked,
-                    agencyFdle:       document.getElementById('polecam-agency-fdle').checked,
-                    agencyInterstate: document.getElementById('polecam-agency-interstate').checked,
-                    agencyBucketTruck: document.getElementById('polecam-agency-bucket-truck').checked
+                    agencyLocal:       document.getElementById('polecam-agency-local')?.checked || false,
+                    agencyState:       document.getElementById('polecam-agency-state')?.checked || false,
+                    agencyFederal:     document.getElementById('polecam-agency-federal')?.checked || false,
+                    agencyFdle:        document.getElementById('polecam-agency-fdle')?.checked || false,
+                    agencyBucketTruck: document.getElementById('polecam-agency-bucket-truck')?.checked || false
                 };
                 if (!userId) { alert('Please select an agency.'); return; }
                 const user = (window.users || []).find(u => u.id === userId);
@@ -4529,7 +4528,7 @@ service cloud.firestore {
             document.getElementById('polecam-deploy-location').value = '';
             document.getElementById('polecam-action-notes').value = '';
             ['polecam-agency-local','polecam-agency-state','polecam-agency-federal',
-             'polecam-agency-fdle','polecam-agency-interstate','polecam-agency-bucket-truck']
+             'polecam-agency-fdle','polecam-agency-bucket-truck']
                 .forEach(id => document.getElementById(id).checked = false);
             populatePoleCamDropdowns();
             renderPoleCamList();
@@ -5248,7 +5247,7 @@ service cloud.firestore {
                 agencyState:      document.getElementById('tscm-agency-state').checked,
                 agencyFederal:    document.getElementById('tscm-agency-federal').checked,
                 agencyFdle:       document.getElementById('tscm-agency-fdle').checked,
-                agencyInterstate: document.getElementById('tscm-agency-interstate').checked,
+                
                 dateStart,
                 dateEnd:   document.getElementById('tscm-date-end').value,
                 location:  document.getElementById('tscm-location').value.trim(),
@@ -5274,7 +5273,7 @@ service cloud.firestore {
         window.clearTSCMForm = function() {
             ['tscm-requesting-agency','tscm-date-start','tscm-date-end','tscm-location','tscm-comments']
                 .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
-            ['tscm-agency-local','tscm-agency-state','tscm-agency-federal','tscm-agency-fdle','tscm-agency-interstate']
+            ['tscm-agency-local','tscm-agency-state','tscm-agency-federal','tscm-agency-fdle']
                 .forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; });
         };
 
@@ -5359,7 +5358,7 @@ service cloud.firestore {
                 agencyState:      document.getElementById('ve-agency-state').checked,
                 agencyFederal:    document.getElementById('ve-agency-federal').checked,
                 agencyFdle:       document.getElementById('ve-agency-fdle').checked,
-                agencyInterstate: document.getElementById('ve-agency-interstate').checked,
+                
                 dateStart,
                 dateEnd:          document.getElementById('ve-date-end').value,
                 comments:         document.getElementById('ve-comments').value.trim(),
@@ -5383,7 +5382,7 @@ service cloud.firestore {
 
         window.clearVEForm = function() {
             ['ve-requesting-agency','ve-date-start','ve-date-end','ve-comments'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
-            ['ve-agency-local','ve-agency-state','ve-agency-federal','ve-agency-fdle','ve-agency-interstate'].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; });
+            ['ve-agency-local','ve-agency-state','ve-agency-federal','ve-agency-fdle'].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; });
         };
 
         window.deleteVEEntry = async function(id) {
@@ -5436,7 +5435,7 @@ service cloud.firestore {
                 agencyState:      document.getElementById('cel-agency-state').checked,
                 agencyFederal:    document.getElementById('cel-agency-federal').checked,
                 agencyFdle:       document.getElementById('cel-agency-fdle').checked,
-                agencyInterstate: document.getElementById('cel-agency-interstate').checked,
+                
                 dateStart,
                 dateEnd:          document.getElementById('cel-date-end').value,
                 comments:         document.getElementById('cel-comments').value.trim(),
@@ -5460,7 +5459,7 @@ service cloud.firestore {
 
         window.clearCelForm = function() {
             ['cel-requesting-agency','cel-date-start','cel-date-end','cel-comments'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
-            ['cel-agency-local','cel-agency-state','cel-agency-federal','cel-agency-fdle','cel-agency-interstate'].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; });
+            ['cel-agency-local','cel-agency-state','cel-agency-federal','cel-agency-fdle'].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; });
         };
 
         window.deleteCelEntry = async function(id) {
