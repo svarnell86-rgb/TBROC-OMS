@@ -3142,6 +3142,20 @@ service cloud.firestore {
                         </div>
                     </div>
                 </div>
+                <div class="card" style="margin-bottom:12px; padding:15px;">
+                    <h3 style="margin-bottom:12px;">Operational Plan</h3>
+                    <div id="edit-cuas-op-plan-current" style="display:none; margin-bottom:10px; padding:8px; background:#f0f4ff; border-radius:6px; font-size:13px;">
+                        📎 Current file: <span id="edit-cuas-op-plan-current-name" style="font-weight:600;"></span>
+                        <button type="button" onclick="removeEditCUASOpPlan()" style="margin-left:10px; background:#e74c3c; color:white; border:none; border-radius:4px; padding:2px 8px; cursor:pointer; font-size:12px;">✕ Remove</button>
+                    </div>
+                    <div class="form-group">
+                        <label id="edit-cuas-file-label">Upload New Op Plan (PDF, DOC, Image)</label>
+                        <input type="file" id="edit-cuas-op-plan-file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" style="padding:8px; border:1px solid #ddd; border-radius:6px; width:100%; font-size:14px;">
+                    </div>
+                    <div id="edit-cuas-op-plan-preview" style="display:none; margin-top:8px; padding:8px; background:#f8f9fa; border-radius:6px; font-size:13px; color:#333;">
+                        📎 New file selected: <span id="edit-cuas-op-plan-filename"></span>
+                    </div>
+                </div>
                 <div style="display:flex; gap:10px; margin-top:10px;">
                     <button type="button" class="btn" onclick="saveEditCUAS()">Save Changes</button>
                     <button type="button" class="btn btn-warning" onclick="closeEditCUASDialog()">Cancel</button>
@@ -3252,7 +3266,7 @@ service cloud.firestore {
         window._sendPasswordResetEmail = sendPasswordResetEmail;
 
         // ===================== Self-Update Version Check =====================
-        const APP_VERSION = '2.9';
+        const APP_VERSION = '3.0';
         window.APP_VERSION = APP_VERSION;
 
         async function checkForUpdates(db) {
@@ -4737,6 +4751,21 @@ service cloud.firestore {
                     dateStart:        document.getElementById('edit-cuas-date-start').value,
                     dateEnd:          document.getElementById('edit-cuas-date-end').value
                 };
+
+                // Handle op plan changes
+                if (window._editCuasRemoveOpPlan) {
+                    updates.opPlanFileName = null;
+                    updates.opPlanFileData = null;
+                } else if (window._editCuasPendingFileData) {
+                    const sizeKB = Math.round(window._editCuasPendingFileData.length * 0.75 / 1024);
+                    if (sizeKB <= 700) {
+                        updates.opPlanFileName = window._editCuasPendingFileName;
+                        updates.opPlanFileData = window._editCuasPendingFileData;
+                    } else {
+                        const proceed = confirm(`⚠️ File is ${sizeKB}KB — may be too large to sync. Save entry without the new file?`);
+                        if (!proceed) return;
+                    }
+                }
 
                 if (window.storageMode === 'firebase' && window.db) {
                     const { updateDoc, doc } = window.firebaseFunctions;
@@ -7983,9 +8012,55 @@ service cloud.firestore {
                 });
             agencySel.value = e.requestingAgency || '';
 
+            // Load existing op plan info
+            window._editCuasPendingFileName = null;
+            window._editCuasPendingFileData = null;
+            window._editCuasRemoveOpPlan    = false;
+            document.getElementById('edit-cuas-op-plan-file').value = '';
+            document.getElementById('edit-cuas-op-plan-preview').style.display = 'none';
+
+            const currentDiv  = document.getElementById('edit-cuas-op-plan-current');
+            const currentName = document.getElementById('edit-cuas-op-plan-current-name');
+            if (e.opPlanFileName) {
+                currentDiv.style.display  = 'block';
+                currentName.textContent   = e.opPlanFileName;
+                document.getElementById('edit-cuas-file-label').textContent = 'Replace Op Plan (PDF, DOC, Image)';
+            } else {
+                currentDiv.style.display  = 'none';
+                document.getElementById('edit-cuas-file-label').textContent = 'Upload Op Plan (PDF, DOC, Image)';
+            }
+
             document.getElementById('edit-cuas-modal').classList.add('active');
         }
         window.editCUAS = editCUAS;
+
+        // File selection handler for edit modal
+        document.getElementById('edit-cuas-op-plan-file').addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const sizeKB = Math.round(file.size / 1024);
+                if (sizeKB > 700) {
+                    alert(`⚠️ File is ${sizeKB}KB — this may be too large to sync across devices. Files under 700KB work best.`);
+                }
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    window._editCuasPendingFileName = file.name;
+                    window._editCuasPendingFileData = ev.target.result;
+                    document.getElementById('edit-cuas-op-plan-filename').textContent = file.name;
+                    document.getElementById('edit-cuas-op-plan-preview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        window.removeEditCUASOpPlan = function() {
+            window._editCuasRemoveOpPlan    = true;
+            window._editCuasPendingFileName = null;
+            window._editCuasPendingFileData = null;
+            document.getElementById('edit-cuas-op-plan-current').style.display  = 'none';
+            document.getElementById('edit-cuas-op-plan-preview').style.display  = 'none';
+            document.getElementById('edit-cuas-op-plan-file').value = '';
+        };
 
         function closeEditCUASDialog() {
             document.getElementById('edit-cuas-modal').classList.remove('active');
