@@ -3252,7 +3252,7 @@ service cloud.firestore {
         window._sendPasswordResetEmail = sendPasswordResetEmail;
 
         // ===================== Self-Update Version Check =====================
-        const APP_VERSION = '2.6';
+        const APP_VERSION = '2.7';
         window.APP_VERSION = APP_VERSION;
 
         async function checkForUpdates(db) {
@@ -4522,7 +4522,33 @@ service cloud.firestore {
         }
         window.savePoleCamAction = savePoleCamAction;
 
-        // ===================== Radio Transfer Form =====================
+        // ===================== Duplicate Check =====================
+        function checkDuplicate(serial, fdle, excludeId) {
+            const s = (serial || '').trim().toLowerCase();
+            const f = (fdle   || '').trim().toLowerCase();
+            if (!s && !f) return null; // nothing to check
+
+            const sources = [
+                { label: 'Equipment',         items: window.equipment     || [] },
+                { label: 'Radio',             items: window.radios        || [] },
+                { label: 'Covert/Overt Video',items: window.poleCameras   || [] },
+                { label: 'GPS Tracker',       items: window.gpsTrackers   || [] },
+            ];
+
+            for (const src of sources) {
+                for (const item of src.items) {
+                    if (excludeId && item.id === excludeId) continue;
+                    const iSerial = (item.serial || '').trim().toLowerCase();
+                    const iFdle   = (item.fdle   || item.fdleProperty || '').trim().toLowerCase();
+                    if (s && iSerial && s === iSerial)
+                        return `⚠️ Duplicate Serial Number found!\n\nS/N "${serial}" already exists as "${item.name}" in ${src.label}.\n\nDo you still want to save?`;
+                    if (f && iFdle && f === iFdle)
+                        return `⚠️ Duplicate Property Number found!\n\nFDLE# "${fdle}" already exists as "${item.name}" in ${src.label}.\n\nDo you still want to save?`;
+                }
+            }
+            return null;
+        }
+        window.checkDuplicate = checkDuplicate;
         window.openRadioTransferForm = function(id) {
             const r = (window.radios || []).find(x => x.id === id);
             if (!r) { alert('Radio not found.'); return; }
@@ -4741,6 +4767,10 @@ service cloud.firestore {
                 deployed:  false,
                 addedDate: new Date().toISOString()
             };
+
+            // Duplicate check
+            const dupWarning = checkDuplicate(tracker.serial, null);
+            if (dupWarning && !confirm(dupWarning)) return;
             if (window.storageMode === 'firebase' && window.db) {
                 try {
                     const { addDoc, collection } = window.firebaseFunctions;
@@ -5766,6 +5796,10 @@ service cloud.firestore {
                 expectedReturnDate: null,
                 addedDate: new Date().toISOString()
             };
+
+            // Duplicate check
+            const dupWarning = checkDuplicate(newEquipment.serial, null);
+            if (dupWarning && !confirm(dupWarning)) return;
             
             console.log('Equipment object being created:');
             console.log(JSON.stringify(newEquipment, null, 2));
@@ -8000,6 +8034,10 @@ service cloud.firestore {
                 addedDate:   new Date().toISOString()
             };
 
+            // Duplicate check
+            const dupWarning = checkDuplicate(radio.serial, radio.fdle);
+            if (dupWarning && !confirm(dupWarning)) return;
+
             if (window.storageMode === 'firebase' && window.db) {
                 try {
                     const { addDoc, collection } = window.firebaseFunctions;
@@ -8376,6 +8414,10 @@ service cloud.firestore {
                 totalDaysDeployed: 0,
                 addedDate: new Date().toISOString()
             };
+
+            // Duplicate check
+            const dupWarning = checkDuplicate(cam.serial, cam.fdle);
+            if (dupWarning && !confirm(dupWarning)) return;
 
             if (window.storageMode === 'firebase' && window.db) {
                 try {
