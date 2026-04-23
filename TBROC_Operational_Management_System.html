@@ -4818,11 +4818,10 @@ service cloud.firestore {
                 const location     = [vehicleYear, vehicleMake, vehicleModel, vehicleColor, vehiclePlate].filter(Boolean).join(' ');
                 const notes      = document.getElementById('gps-action-notes').value.trim();
                 const agencyTypes = {
-                    agencyLocal:      document.getElementById('gps-agency-local').checked,
-                    agencyState:      document.getElementById('gps-agency-state').checked,
-                    agencyFederal:    document.getElementById('gps-agency-federal').checked,
-                    agencyFdle:       document.getElementById('gps-agency-fdle').checked,
-                    agencyInterstate: document.getElementById('gps-agency-interstate').checked
+                    agencyLocal:      document.getElementById('gps-agency-local')?.checked || false,
+                    agencyState:      document.getElementById('gps-agency-state')?.checked || false,
+                    agencyFederal:    document.getElementById('gps-agency-federal')?.checked || false,
+                    agencyFdle:       document.getElementById('gps-agency-fdle')?.checked || false,
                 };
                 if (!userId) { alert('Please select an agency.'); return; }
                 const user = (window.users || []).find(u => u.id === userId);
@@ -4867,7 +4866,7 @@ service cloud.firestore {
                     deployed: false, assignedTo: null, assignedToName: null,
                     deployDate: null, deployLocation: null,
                     totalDaysDeployed: (tracker.totalDaysDeployed || 0) + days,
-                    agencyLocal:null, agencyState:null, agencyFederal:null, agencyFdle:null, agencyInterstate:null
+                    agencyLocal:null, agencyState:null, agencyFederal:null, agencyFdle:null
                 };
                 if (window.storageMode === 'firebase' && window.db) {
                     try {
@@ -4887,7 +4886,7 @@ service cloud.firestore {
             ['gps-assign-id','gps-assign-user','gps-deploy-date','gps-retrieve-date',
              'gps-vehicle-year','gps-vehicle-make','gps-vehicle-model','gps-vehicle-color','gps-vehicle-plate','gps-case-number','gps-action-notes']
                 .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-            ['gps-agency-local','gps-agency-state','gps-agency-federal','gps-agency-fdle','gps-agency-interstate']
+            ['gps-agency-local','gps-agency-state','gps-agency-federal','gps-agency-fdle']
                 .forEach(id => { const el = document.getElementById(id); if (el) el.checked = false; });
             if (typeof populateGPSDropdowns === 'function') populateGPSDropdowns();
             if (typeof renderGPSList === 'function') renderGPSList();
