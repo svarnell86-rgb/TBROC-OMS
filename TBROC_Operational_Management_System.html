@@ -3233,6 +3233,7 @@ service cloud.firestore {
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDocs, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 
         // Make Firebase functions globally accessible
         window.firebaseFunctions = {
@@ -3252,7 +3253,7 @@ service cloud.firestore {
         window._sendPasswordResetEmail = sendPasswordResetEmail;
 
         // ===================== Self-Update Version Check =====================
-        const APP_VERSION = '2.8';
+        const APP_VERSION = '2.9';
         window.APP_VERSION = APP_VERSION;
 
         async function checkForUpdates(db) {
@@ -3392,8 +3393,9 @@ service cloud.firestore {
         function initializeFirebase(config) {
             try {
                 const app = initializeApp(config);
-                window.db   = getFirestore(app);
-                window.auth = getAuth(app);
+                window.db      = getFirestore(app);
+                window.auth    = getAuth(app);
+                window.storage = getStorage(app);
                 window.storageMode = 'firebase';
 
                 // Check for updates immediately — runs before login so even old files show the banner
@@ -7719,6 +7721,7 @@ service cloud.firestore {
             reader.onload = function(ev) {
                 window._cuasPendingFileData = ev.target.result;
                 window._cuasPendingFileName = file.name;
+                window._cuasPendingFile     = file;
                 document.getElementById('cuas-op-plan-filename').textContent = file.name;
                 document.getElementById('cuas-op-plan-preview').style.display = 'block';
             };
@@ -7755,6 +7758,19 @@ service cloud.firestore {
                 try {
                     const firebaseEntry = { ...entry };
                     delete firebaseEntry.opPlanFileData;
+
+                    // Upload op plan file to Firebase Storage if present
+                    if (window._cuasPendingFile && window.storage) {
+                        try {
+                            const fileRef = storageRef(window.storage, `cuas-opplans/${Date.now()}_${window._cuasPendingFileName}`);
+                            await uploadBytes(fileRef, window._cuasPendingFile);
+                            const downloadUrl = await getDownloadURL(fileRef);
+                            firebaseEntry.opPlanFileUrl = downloadUrl;
+                        } catch (uploadErr) {
+                            console.warn('File upload failed, saving entry without file:', uploadErr.message);
+                        }
+                    }
+
                     const { addDoc, collection } = window.firebaseFunctions;
                     await addDoc(collection(window.db, 'cuasEntries'), firebaseEntry);
                     entry.id = Date.now().toString();
@@ -7833,9 +7849,11 @@ service cloud.firestore {
                     ${e.opPlanFileName ? `
                     <div style="margin-top:12px; display:flex; align-items:center; gap:10px; font-size:13px;">
                         📎 <strong>Op Plan:</strong>
-                        ${e.opPlanFileData
-                            ? `<a href="${e.opPlanFileData}" download="${e.opPlanFileName}" style="color:#003366;">${e.opPlanFileName}</a>`
-                            : `<span style="color:#666;">${e.opPlanFileName} (file stored locally only)</span>`
+                        ${e.opPlanFileUrl
+                            ? `<a href="${e.opPlanFileUrl}" target="_blank" style="color:#003366; text-decoration:underline;">${e.opPlanFileName}</a>`
+                            : e.opPlanFileData
+                                ? `<a href="${e.opPlanFileData}" download="${e.opPlanFileName}" style="color:#003366;">${e.opPlanFileName}</a>`
+                                : `<span style="color:#666;">${e.opPlanFileName} (not available on this device)</span>`
                         }
                     </div>` : ''}
                 </div>
